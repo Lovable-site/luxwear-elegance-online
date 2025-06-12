@@ -117,7 +117,6 @@ const AdminDashboard = () => {
         <p className="text-gray-600">Welcome to LuxuriqWear Admin Panel</p>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -161,7 +160,6 @@ const AdminDashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Low Stock Alert */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
@@ -181,7 +179,6 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Recent Orders */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
