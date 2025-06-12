@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -113,25 +114,25 @@ const AdminOrders = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 lg:space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
-        <p className="text-gray-600">Manage customer orders and track shipments</p>
+        <h1 className="text-xl lg:text-2xl font-bold text-gray-900">Orders</h1>
+        <p className="text-sm lg:text-base text-gray-600">Manage customer orders and track shipments</p>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      {/* Filters - Enhanced mobile responsiveness */}
+      <div className="flex flex-col sm:flex-row gap-3 lg:gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
             placeholder="Search by customer name, email, or order ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-10 text-sm lg:text-base"
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-full sm:w-48">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
@@ -145,47 +146,47 @@ const AdminOrders = () => {
         </Select>
       </div>
 
-      {/* Orders List */}
-      <div className="space-y-4">
+      {/* Orders List - Improved mobile layout */}
+      <div className="space-y-3 lg:space-y-4">
         {filteredOrders.map((order) => (
           <Card key={order.id}>
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-lg">Order #{order.id.slice(0, 8)}</CardTitle>
-                  <p className="text-sm text-gray-600">
+            <CardHeader className="pb-3">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                <div className="flex-1 min-w-0">
+                  <CardTitle className="text-base lg:text-lg">Order #{order.id.slice(0, 8)}</CardTitle>
+                  <p className="text-sm text-gray-600 truncate">
                     {order.profiles?.full_name || order.profiles?.email}
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-xs lg:text-sm text-gray-500">
                     {format(new Date(order.created_at), 'MMM dd, yyyy HH:mm')}
                   </p>
                 </div>
-                <div className="text-right">
-                  <p className="text-lg font-bold text-luxury-gold">
+                <div className="flex flex-row sm:flex-col sm:text-right items-center sm:items-end gap-2">
+                  <p className="text-lg font-bold text-luxury-gold flex-1 sm:flex-none">
                     ${Number(order.total_amount).toFixed(2)}
                   </p>
-                  <Badge className={getStatusColor(order.status)}>
+                  <Badge className={`${getStatusColor(order.status)} flex-shrink-0 text-xs`}>
                     {order.status}
                   </Badge>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                 <div>
                   <p className="text-sm text-gray-600">
                     {order.order_items?.length || 0} item(s)
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 truncate">
                     Ship to: {order.shipping_address?.city}, {order.shipping_address?.state}
                   </p>
                 </div>
-                <div className="flex space-x-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <Select
                     value={order.status}
                     onValueChange={(value: OrderStatus) => updateOrderStatus(order.id, value)}
                   >
-                    <SelectTrigger className="w-32">
+                    <SelectTrigger className="w-full sm:w-32">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -200,6 +201,7 @@ const AdminOrders = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => setSelectedOrder(order)}
+                    className="w-full sm:w-auto"
                   >
                     <Eye className="h-4 w-4 mr-1" />
                     View
@@ -217,45 +219,45 @@ const AdminOrders = () => {
         </div>
       )}
 
-      {/* Order Details Modal */}
+      {/* Order Details Modal - Enhanced mobile responsiveness */}
       {selectedOrder && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center p-6 border-b">
-              <h2 className="text-xl font-bold">Order Details</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 lg:p-4">
+          <div className="bg-white rounded-lg w-full max-w-2xl max-h-[95vh] lg:max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center p-4 lg:p-6 border-b sticky top-0 bg-white">
+              <h2 className="text-lg lg:text-xl font-bold">Order Details</h2>
               <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(null)}>
                 <X className="h-4 w-4" />
               </Button>
             </div>
-            <div className="p-6 space-y-6">
+            <div className="p-4 lg:p-6 space-y-4 lg:space-y-6">
               {/* Customer Info */}
               <div>
-                <h3 className="font-semibold mb-2">Customer Information</h3>
-                <p>{selectedOrder.profiles?.full_name}</p>
-                <p>{selectedOrder.profiles?.email}</p>
+                <h3 className="font-semibold mb-2 text-sm lg:text-base">Customer Information</h3>
+                <p className="text-sm lg:text-base">{selectedOrder.profiles?.full_name}</p>
+                <p className="text-sm lg:text-base break-all">{selectedOrder.profiles?.email}</p>
               </div>
 
               {/* Shipping Address */}
               <div>
-                <h3 className="font-semibold mb-2">Shipping Address</h3>
-                <p>{selectedOrder.shipping_address?.street}</p>
-                <p>{selectedOrder.shipping_address?.city}, {selectedOrder.shipping_address?.state} {selectedOrder.shipping_address?.zip}</p>
+                <h3 className="font-semibold mb-2 text-sm lg:text-base">Shipping Address</h3>
+                <p className="text-sm lg:text-base">{selectedOrder.shipping_address?.street}</p>
+                <p className="text-sm lg:text-base">{selectedOrder.shipping_address?.city}, {selectedOrder.shipping_address?.state} {selectedOrder.shipping_address?.zip}</p>
               </div>
 
               {/* Order Items */}
               <div>
-                <h3 className="font-semibold mb-2">Order Items</h3>
+                <h3 className="font-semibold mb-2 text-sm lg:text-base">Order Items</h3>
                 <div className="space-y-2">
                   {selectedOrder.order_items?.map((item, index) => (
-                    <div key={index} className="flex justify-between items-center p-3 border rounded">
-                      <div>
-                        <p className="font-medium">{item.products?.name}</p>
-                        <p className="text-sm text-gray-600">SKU: {item.products?.sku}</p>
-                        {item.size && <p className="text-sm text-gray-600">Size: {item.size}</p>}
+                    <div key={index} className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 border rounded gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm lg:text-base truncate">{item.products?.name}</p>
+                        <p className="text-xs lg:text-sm text-gray-600">SKU: {item.products?.sku}</p>
+                        {item.size && <p className="text-xs lg:text-sm text-gray-600">Size: {item.size}</p>}
                       </div>
-                      <div className="text-right">
-                        <p className="font-medium">${Number(item.price).toFixed(2)}</p>
-                        <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
+                      <div className="text-left sm:text-right flex-shrink-0">
+                        <p className="font-medium text-sm lg:text-base">${Number(item.price).toFixed(2)}</p>
+                        <p className="text-xs lg:text-sm text-gray-600">Qty: {item.quantity}</p>
                       </div>
                     </div>
                   ))}
@@ -265,8 +267,8 @@ const AdminOrders = () => {
               {/* Total */}
               <div className="border-t pt-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-lg font-semibold">Total:</span>
-                  <span className="text-lg font-bold text-luxury-gold">
+                  <span className="text-base lg:text-lg font-semibold">Total:</span>
+                  <span className="text-base lg:text-lg font-bold text-luxury-gold">
                     ${Number(selectedOrder.total_amount).toFixed(2)}
                   </span>
                 </div>

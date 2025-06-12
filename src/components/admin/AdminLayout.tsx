@@ -101,52 +101,55 @@ const AdminLayout = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden" 
+          onClick={() => setSidebarOpen(false)} 
+        />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - Improved mobile responsiveness */}
       <div className={`fixed inset-y-0 left-0 w-64 bg-black transform transition-transform duration-300 ease-in-out z-50 ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       } lg:translate-x-0`}>
         <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="flex items-center justify-between h-16 px-6 bg-luxury-gold">
-            <h1 className="text-xl font-bold text-black">LuxuriqWear Admin</h1>
+          {/* Logo - Responsive text */}
+          <div className="flex items-center justify-between h-16 px-4 lg:px-6 bg-luxury-gold">
+            <h1 className="text-lg lg:text-xl font-bold text-black truncate">LuxuriqWear Admin</h1>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="lg:hidden text-black hover:text-gray-700"
+              className="lg:hidden text-black hover:text-gray-700 p-1"
             >
-              <X className="h-6 w-6" />
+              <X className="h-5 w-5" />
             </button>
           </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-2">
+          {/* Navigation - Better mobile spacing */}
+          <nav className="flex-1 px-3 lg:px-4 py-4 lg:py-6 space-y-1 lg:space-y-2 overflow-y-auto">
             {navigation.map((item) => {
               const isActive = location.pathname === item.href;
               return (
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+                  className={`flex items-center px-3 lg:px-4 py-2 lg:py-3 text-sm font-medium rounded-lg transition-colors ${
                     isActive
                       ? 'bg-luxury-gold text-black'
                       : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                   }`}
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <item.icon className="mr-3 h-5 w-5" />
-                  {item.name}
+                  <item.icon className="mr-2 lg:mr-3 h-4 w-4 lg:h-5 lg:w-5 flex-shrink-0" />
+                  <span className="truncate">{item.name}</span>
                 </Link>
               );
             })}
           </nav>
 
-          {/* User info and logout */}
-          <div className="p-4 border-t border-gray-800">
-            <div className="flex items-center mb-4">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-white">{user.email}</p>
+          {/* User info and logout - Responsive layout */}
+          <div className="p-3 lg:p-4 border-t border-gray-800">
+            <div className="flex items-center mb-3 lg:mb-4">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs lg:text-sm font-medium text-white truncate">{user.email}</p>
                 <p className="text-xs text-gray-400 capitalize">{userRole}</p>
               </div>
             </div>
@@ -154,9 +157,9 @@ const AdminLayout = () => {
               onClick={handleLogout}
               variant="outline"
               size="sm"
-              className="w-full text-white border-gray-600 hover:bg-gray-800"
+              className="w-full text-white border-gray-600 hover:bg-gray-800 text-xs lg:text-sm"
             >
-              <LogOut className="mr-2 h-4 w-4" />
+              <LogOut className="mr-1 lg:mr-2 h-3 w-3 lg:h-4 lg:w-4" />
               Logout
             </Button>
           </div>
@@ -165,24 +168,24 @@ const AdminLayout = () => {
 
       {/* Main content */}
       <div className="lg:ml-64">
-        {/* Top bar */}
-        <div className="bg-white shadow-sm border-b">
-          <div className="flex items-center justify-between h-16 px-6">
+        {/* Top bar - Enhanced mobile responsiveness */}
+        <div className="bg-white shadow-sm border-b sticky top-0 z-30">
+          <div className="flex items-center justify-between h-14 lg:h-16 px-4 lg:px-6">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden text-gray-600 hover:text-gray-900"
+              className="lg:hidden text-gray-600 hover:text-gray-900 p-2 -ml-2"
             >
-              <Menu className="h-6 w-6" />
+              <Menu className="h-5 w-5" />
             </button>
             <div className="flex-1 lg:hidden"></div>
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-base lg:text-lg font-semibold text-gray-900 truncate">
               {navigation.find(item => item.href === location.pathname)?.name || 'Admin Panel'}
             </h2>
           </div>
         </div>
 
-        {/* Page content */}
-        <main className="p-6">
+        {/* Page content - Improved mobile padding */}
+        <main className="p-4 lg:p-6 pb-20 lg:pb-6">
           <Outlet />
         </main>
       </div>

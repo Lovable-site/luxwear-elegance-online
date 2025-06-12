@@ -95,25 +95,25 @@ const AdminUsers = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 lg:space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Users</h1>
-        <p className="text-gray-600">Manage user accounts and permissions</p>
+        <h1 className="text-xl lg:text-2xl font-bold text-gray-900">Users</h1>
+        <p className="text-sm lg:text-base text-gray-600">Manage user accounts and permissions</p>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      {/* Filters - Enhanced mobile responsiveness */}
+      <div className="flex flex-col sm:flex-row gap-3 lg:gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
             placeholder="Search by name or email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-10 text-sm lg:text-base"
           />
         </div>
         <Select value={roleFilter} onValueChange={setRoleFilter}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-full sm:w-48">
             <SelectValue placeholder="Filter by role" />
           </SelectTrigger>
           <SelectContent>
@@ -125,44 +125,42 @@ const AdminUsers = () => {
         </Select>
       </div>
 
-      {/* Users Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Users Grid - Improved responsive grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 lg:gap-6">
         {filteredUsers.map((user) => (
-          <Card key={user.id}>
-            <CardHeader className="pb-2">
-              <div className="flex justify-between items-start">
-                <CardTitle className="text-lg flex items-center">
+          <Card key={user.id} className="h-fit">
+            <CardHeader className="pb-3">
+              <div className="flex justify-between items-start gap-2">
+                <CardTitle className="text-base lg:text-lg flex items-center min-w-0">
                   {getRoleIcon(user.role)}
-                  <span className="ml-2">{user.full_name || 'No Name'}</span>
+                  <span className="ml-2 truncate">{user.full_name || 'No Name'}</span>
                 </CardTitle>
-                <Badge className={getRoleColor(user.role)}>
+                <Badge className={`${getRoleColor(user.role)} flex-shrink-0 text-xs`}>
                   {user.role}
                 </Badge>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <p className="text-sm text-gray-600 break-all">{user.email}</p>
-                <p className="text-xs text-gray-500">
-                  Joined: {format(new Date(user.created_at), 'MMM dd, yyyy')}
-                </p>
-                
-                <div className="pt-2">
-                  <label className="text-xs font-medium text-gray-700">Role:</label>
-                  <Select
-                    value={user.role}
-                    onValueChange={(value: UserRole) => updateUserRole(user.id, value)}
-                  >
-                    <SelectTrigger className="w-full mt-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="customer">Customer</SelectItem>
-                      <SelectItem value="manager">Manager</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+            <CardContent className="space-y-3">
+              <p className="text-xs lg:text-sm text-gray-600 break-all">{user.email}</p>
+              <p className="text-xs text-gray-500">
+                Joined: {format(new Date(user.created_at), 'MMM dd, yyyy')}
+              </p>
+              
+              <div className="pt-2">
+                <label className="text-xs font-medium text-gray-700">Role:</label>
+                <Select
+                  value={user.role}
+                  onValueChange={(value: UserRole) => updateUserRole(user.id, value)}
+                >
+                  <SelectTrigger className="w-full mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="customer">Customer</SelectItem>
+                    <SelectItem value="manager">Manager</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>
