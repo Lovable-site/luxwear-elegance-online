@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,13 +5,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Search, Eye } from "lucide-react";
+import { Search, Eye, X } from "lucide-react";
 import { format } from "date-fns";
+import type { Database } from "@/integrations/supabase/types";
+
+type OrderStatus = Database['public']['Enums']['order_status'];
 
 interface Order {
   id: string;
   total_amount: number;
-  status: string;
+  status: OrderStatus;
   created_at: string;
   shipping_address: any;
   profiles: {
@@ -66,7 +68,7 @@ const AdminOrders = () => {
     }
   };
 
-  const updateOrderStatus = async (orderId: string, newStatus: string) => {
+  const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
     try {
       const { error } = await supabase
         .from('orders')
@@ -181,7 +183,7 @@ const AdminOrders = () => {
                 <div className="flex space-x-2">
                   <Select
                     value={order.status}
-                    onValueChange={(value) => updateOrderStatus(order.id, value)}
+                    onValueChange={(value: OrderStatus) => updateOrderStatus(order.id, value)}
                   >
                     <SelectTrigger className="w-32">
                       <SelectValue />

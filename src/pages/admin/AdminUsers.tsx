@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,12 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, User, Shield, ShieldCheck } from "lucide-react";
 import { format } from "date-fns";
+import type { Database } from "@/integrations/supabase/types";
+
+type UserRole = Database['public']['Enums']['user_role'];
 
 interface UserProfile {
   id: string;
   email: string;
   full_name: string;
-  role: string;
+  role: UserRole;
   created_at: string;
   updated_at: string;
 }
@@ -44,7 +46,7 @@ const AdminUsers = () => {
     }
   };
 
-  const updateUserRole = async (userId: string, newRole: string) => {
+  const updateUserRole = async (userId: string, newRole: UserRole) => {
     try {
       const { error } = await supabase
         .from('profiles')
@@ -149,7 +151,7 @@ const AdminUsers = () => {
                   <label className="text-xs font-medium text-gray-700">Role:</label>
                   <Select
                     value={user.role}
-                    onValueChange={(value) => updateUserRole(user.id, value)}
+                    onValueChange={(value: UserRole) => updateUserRole(user.id, value)}
                   >
                     <SelectTrigger className="w-full mt-1">
                       <SelectValue />
