@@ -171,7 +171,7 @@ const AdminDashboard = () => {
             {stats.lowStockProducts > 0 ? (
               <div className="text-center py-4">
                 <p className="text-2xl font-bold text-yellow-600">{stats.lowStockProducts}</p>
-                <p className="text-gray-600">Products with low stock (< 10 items)</p>
+                <p className="text-gray-600">Products with low stock (&lt; 10 items)</p>
               </div>
             ) : (
               <p className="text-green-600 text-center py-4">All products are well stocked!</p>
