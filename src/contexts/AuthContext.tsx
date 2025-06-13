@@ -68,32 +68,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single()
-          .then(({ data: profile }) => {
+    const getInitialSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', session.user.id)
+              .single();
+            
             setUserRole(profile?.role || 'customer');
-            setLoading(false);
-          })
-          .catch((error) => {
+          } catch (error) {
             console.error('Error fetching user role:', error);
             setUserRole('customer');
-            setLoading(false);
-          });
-      } else {
+          }
+        }
+        setLoading(false);
+      } catch (error) {
+        console.error('Error getting session:', error);
         setLoading(false);
       }
-    }).catch((error) => {
-      console.error('Error getting session:', error);
-      setLoading(false);
-    });
+    };
+
+    getInitialSession();
 
     return () => subscription.unsubscribe();
   }, []);
