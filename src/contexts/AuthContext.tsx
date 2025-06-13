@@ -82,7 +82,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setUserRole(profile?.role || 'customer');
             setLoading(false);
           })
-          .catch(() => {
+          .catch((error) => {
+            console.error('Error fetching user role:', error);
             setUserRole('customer');
             setLoading(false);
           });
