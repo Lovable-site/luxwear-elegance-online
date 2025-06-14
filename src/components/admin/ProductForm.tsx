@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X } from "lucide-react";
+import ImageUpload from "./ImageUpload";
 
 interface Category {
   id: string;
@@ -34,7 +35,7 @@ const ProductForm = ({ product, onClose, onSave }: ProductFormProps) => {
     tags: '',
     is_featured: false,
     is_active: true,
-    images: ''
+    images: [] as string[]
   });
 
   useEffect(() => {
@@ -51,7 +52,7 @@ const ProductForm = ({ product, onClose, onSave }: ProductFormProps) => {
         tags: product.tags?.join(', ') || '',
         is_featured: product.is_featured || false,
         is_active: product.is_active ?? true,
-        images: product.images?.join(', ') || ''
+        images: product.images || []
       });
     }
   }, [product]);
@@ -86,7 +87,7 @@ const ProductForm = ({ product, onClose, onSave }: ProductFormProps) => {
         tags: formData.tags.split(',').map(s => s.trim()).filter(s => s),
         is_featured: formData.is_featured,
         is_active: formData.is_active,
-        images: formData.images.split(',').map(s => s.trim()).filter(s => s),
+        images: formData.images,
         updated_at: new Date().toISOString()
       };
 
@@ -115,7 +116,7 @@ const ProductForm = ({ product, onClose, onSave }: ProductFormProps) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center p-6 border-b">
           <h2 className="text-xl font-bold">
             {product ? 'Edit Product' : 'Add New Product'}
@@ -125,7 +126,7 @@ const ProductForm = ({ product, onClose, onSave }: ProductFormProps) => {
           </Button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="name">Product Name</Label>
@@ -220,16 +221,12 @@ const ProductForm = ({ product, onClose, onSave }: ProductFormProps) => {
             />
           </div>
 
-          <div>
-            <Label htmlFor="images">Image URLs (comma separated)</Label>
-            <Textarea
-              id="images"
-              value={formData.images}
-              onChange={(e) => setFormData({ ...formData, images: e.target.value })}
-              placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
-              rows={2}
-            />
-          </div>
+          {/* Image Upload Component */}
+          <ImageUpload
+            images={formData.images}
+            onImagesChange={(images) => setFormData({ ...formData, images })}
+            maxImages={3}
+          />
 
           <div className="flex space-x-4">
             <div className="flex items-center space-x-2">
