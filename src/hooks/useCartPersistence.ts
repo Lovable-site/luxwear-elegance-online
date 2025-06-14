@@ -12,13 +12,15 @@ export const useCartPersistence = () => {
   // Load cart from database when user logs in
   useEffect(() => {
     if (user) {
+      console.log('[CartPersistence] Loading cart from database for user:', user.email);
       loadCartFromDatabase();
     }
   }, [user]);
 
   // Sync cart to database when cart changes (for logged-in users)
   useEffect(() => {
-    if (user && cartItems.length > 0) {
+    if (user && cartItems.length >= 0) { // Changed condition to sync even empty carts
+      console.log('[CartPersistence] Syncing cart to database, items:', cartItems.length);
       syncCartToDatabase();
     }
   }, [cartItems, user]);
@@ -27,11 +29,13 @@ export const useCartPersistence = () => {
     if (!user) return;
 
     try {
+      console.log('[CartPersistence] Fetching cart items from database');
       const { data: cartData, error } = await supabase
         .from('cart_items')
         .select(`
           *,
           products (
+            id,
             name,
             price,
             images
@@ -39,21 +43,28 @@ export const useCartPersistence = () => {
         `)
         .eq('user_id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('[CartPersistence] Error loading cart:', error);
+        throw error;
+      }
+
+      console.log('[CartPersistence] Raw cart data from database:', cartData);
 
       const cartItems = cartData?.map(item => ({
-        id: parseInt(item.product_id),
-        name: item.products?.name || '',
-        price: item.products?.price || 0,
-        image: item.products?.images?.[0] || '',
-        size: item.size || '',
-        color: 'Default', // You can extend this later
+        id: item.product_id, // Keep as string UUID
+        name: item.products?.name || 'Unknown Product',
+        price: Number(item.products?.price) || 0,
+        image: item.products?.images?.[0] || '/placeholder.svg',
+        size: item.size || 'M',
+        color: 'Default',
         quantity: item.quantity
       })) || [];
 
+      console.log('[CartPersistence] Processed cart items:', cartItems);
       setCartItems(cartItems);
     } catch (error) {
-      console.error('Error loading cart:', error);
+      console.error('[CartPersistence] Error loading cart:', error);
+      toast.error('Failed to load cart from database');
     }
   };
 
@@ -61,27 +72,44 @@ export const useCartPersistence = () => {
     if (!user) return;
 
     try {
+      console.log('[CartPersistence] Syncing cart to database');
+      
       // Clear existing cart items for this user
-      await supabase
+      const { error: deleteError } = await supabase
         .from('cart_items')
         .delete()
         .eq('user_id', user.id);
+
+      if (deleteError) {
+        console.error('[CartPersistence] Error clearing cart:', deleteError);
+        throw deleteError;
+      }
 
       // Insert current cart items
       if (cartItems.length > 0) {
         const cartData = cartItems.map(item => ({
           user_id: user.id,
-          product_id: item.id.toString(),
+          product_id: item.id, // This should be a UUID string
           quantity: item.quantity,
           size: item.size || null
         }));
 
-        await supabase
+        console.log('[CartPersistence] Inserting cart data:', cartData);
+
+        const { error: insertError } = await supabase
           .from('cart_items')
           .insert(cartData);
+
+        if (insertError) {
+          console.error('[CartPersistence] Error inserting cart items:', insertError);
+          throw insertError;
+        }
       }
+
+      console.log('[CartPersistence] Cart sync completed successfully');
     } catch (error) {
-      console.error('Error syncing cart:', error);
+      console.error('[CartPersistence] Error syncing cart:', error);
+      toast.error('Failed to sync cart to database');
     }
   };
 
@@ -91,6 +119,8 @@ export const useCartPersistence = () => {
     }
 
     try {
+      console.log('[CartPersistence] Creating order with items:', cartItems);
+      
       // Calculate totals
       const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
       const discount = subtotal > 500 ? subtotal * 0.1 : 0;
@@ -106,17 +136,22 @@ export const useCartPersistence = () => {
           total_amount: total,
           status: 'pending',
           shipping_address: shippingData,
-          billing_address: shippingData // Using same address for billing
+          billing_address: shippingData
         })
         .select()
         .single();
 
-      if (orderError) throw orderError;
+      if (orderError) {
+        console.error('[CartPersistence] Error creating order:', orderError);
+        throw orderError;
+      }
+
+      console.log('[CartPersistence] Order created:', order);
 
       // Create order items
       const orderItems = cartItems.map(item => ({
         order_id: order.id,
-        product_id: item.id.toString(),
+        product_id: item.id, // UUID string
         quantity: item.quantity,
         price: item.price,
         size: item.size || null
@@ -126,7 +161,10 @@ export const useCartPersistence = () => {
         .from('order_items')
         .insert(orderItems);
 
-      if (itemsError) throw itemsError;
+      if (itemsError) {
+        console.error('[CartPersistence] Error creating order items:', itemsError);
+        throw itemsError;
+      }
 
       // Clear cart from database
       await supabase
@@ -134,9 +172,10 @@ export const useCartPersistence = () => {
         .delete()
         .eq('user_id', user.id);
 
+      console.log('[CartPersistence] Order creation completed successfully');
       return order;
     } catch (error) {
-      console.error('Error creating order:', error);
+      console.error('[CartPersistence] Error creating order:', error);
       throw error;
     }
   };

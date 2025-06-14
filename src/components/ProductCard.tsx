@@ -24,7 +24,7 @@ interface ProductCardProps {
 const ProductCard = ({ product }: ProductCardProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
-  const { cartItems, setCartItems } = useCart();
+  const { addToCart } = useCart();
   const { wishlist, addToWishlist, removeFromWishlist, isLoading: wishLoading } = useWishlist();
 
   const isWishlisted = wishlist.includes(String(product.id));
@@ -47,35 +47,24 @@ const ProductCard = ({ product }: ProductCardProps) => {
     setIsLoading(true);
     
     try {
+      console.log('[ProductCard] Adding product to cart:', product);
+      
       const cartItem = {
-        id: Number(product.id),
+        id: product.id, // Keep the original ID type (string or number)
         name: product.name,
         price: product.price,
         image: product.image,
-        size: "M", // Default size, could be made configurable
+        size: "M", // Default size
         color: "Default",
         quantity: 1
       };
 
-      // Check if item already exists in cart
-      const existingItemIndex = cartItems.findIndex(item => 
-        item.id === cartItem.id && item.size === cartItem.size
-      );
-
-      if (existingItemIndex >= 0) {
-        // Update quantity if item exists
-        const updatedItems = [...cartItems];
-        updatedItems[existingItemIndex].quantity += 1;
-        setCartItems(updatedItems);
-      } else {
-        // Add new item to cart
-        setCartItems([...cartItems, cartItem]);
-      }
-
+      console.log('[ProductCard] Cart item being added:', cartItem);
+      addToCart(cartItem);
       toast.success(`${product.name} added to cart!`);
     } catch (error) {
       toast.error("Failed to add item to cart");
-      console.error('Error adding to cart:', error);
+      console.error('[ProductCard] Error adding to cart:', error);
     } finally {
       setIsLoading(false);
     }
