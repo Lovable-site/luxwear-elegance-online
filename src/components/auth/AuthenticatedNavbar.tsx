@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,10 +7,24 @@ import { useAuth } from "@/contexts/AuthContext";
 import { LogOut, Shield, Store, Heart, ShoppingBag, User, Menu, X } from "lucide-react";
 
 const AuthenticatedNavbar = () => {
-  const { userRole, signOut } = useAuth();
+  const { user, userRole, signOut, refreshUserRole } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const cartItems = 0; // This will be managed by cart context later
   const wishlistItems = 0; // This will be managed by wishlist context later
+
+  // Debug logging
+  useEffect(() => {
+    console.log('AuthenticatedNavbar - User:', user?.email);
+    console.log('AuthenticatedNavbar - UserRole:', userRole);
+  }, [user, userRole]);
+
+  // Refresh user role on component mount to ensure we have the latest role
+  useEffect(() => {
+    if (user && !userRole) {
+      console.log('Refreshing user role for:', user.email);
+      refreshUserRole();
+    }
+  }, [user, userRole, refreshUserRole]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -57,10 +71,17 @@ const AuthenticatedNavbar = () => {
 
           {/* Action Items */}
           <div className="hidden md:flex items-center space-x-4">
+            {/* Debug info - remove in production */}
+            {process.env.NODE_ENV === 'development' && (
+              <span className="text-xs text-gray-500">
+                Role: {userRole || 'loading...'}
+              </span>
+            )}
+            
             {userRole === 'admin' && (
               <>
                 <Link to="/admin">
-                  <Button variant="outline" className="flex items-center space-x-2">
+                  <Button variant="outline" className="flex items-center space-x-2 bg-luxury-gold/10 border-luxury-gold text-luxury-gold hover:bg-luxury-gold hover:text-black">
                     <Shield className="h-4 w-4" />
                     <span>Admin Panel</span>
                   </Button>
@@ -158,10 +179,17 @@ const AuthenticatedNavbar = () => {
               </Link>
               
               <div className="flex flex-col space-y-4 pt-4 border-t border-gray-200">
+                {/* Debug info - remove in production */}
+                {process.env.NODE_ENV === 'development' && (
+                  <span className="text-xs text-gray-500">
+                    Role: {userRole || 'loading...'}
+                  </span>
+                )}
+                
                 {userRole === 'admin' && (
                   <>
                     <Link to="/admin" onClick={() => setIsMobileMenuOpen(false)}>
-                      <Button variant="outline" className="w-full flex items-center space-x-2">
+                      <Button variant="outline" className="w-full flex items-center space-x-2 bg-luxury-gold/10 border-luxury-gold text-luxury-gold hover:bg-luxury-gold hover:text-black">
                         <Shield className="h-4 w-4" />
                         <span>Admin Panel</span>
                       </Button>
