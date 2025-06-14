@@ -3,14 +3,17 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Edit, Trash2 } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Image } from "lucide-react";
 import CollectionForm from "@/components/admin/CollectionForm";
 
 interface Category {
   id: string;
   name: string;
   description: string | null;
+  is_curated: boolean;
+  image_url: string | null;
   created_at: string;
 }
 
@@ -101,8 +104,28 @@ const AdminCollections = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredCategories.map((category) => (
           <Card key={category.id} className="overflow-hidden">
+            {/* Collection Image */}
+            <div className="aspect-video">
+              {category.image_url ? (
+                <img
+                  src={category.image_url}
+                  alt={category.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                  <Image className="h-8 w-8 text-gray-400" />
+                </div>
+              )}
+            </div>
+            
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg">{category.name}</CardTitle>
+              <div className="flex justify-between items-start">
+                <CardTitle className="text-lg">{category.name}</CardTitle>
+                {category.is_curated && (
+                  <Badge className="bg-luxury-gold text-black">Curated</Badge>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
