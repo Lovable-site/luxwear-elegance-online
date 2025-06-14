@@ -1,9 +1,8 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, ShoppingBag, User, Menu, X } from "lucide-react";
+import { ShoppingBag, User, Menu, X } from "lucide-react";
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -57,14 +56,6 @@ const Navbar = () => {
               </Button>
             </Link>
             
-            <Button variant="ghost" size="icon" className="relative">
-              <Heart className="h-5 w-5" />
-              {wishlistItems > 0 && (
-                <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 bg-luxury-gold text-black text-xs flex items-center justify-center">
-                  {wishlistItems}
-                </Badge>
-              )}
-            </Button>
 
             <Link to="/cart">
               <Button variant="ghost" size="icon" className="relative">
@@ -134,14 +125,6 @@ const Navbar = () => {
                   </Button>
                 </Link>
                 
-                <Button variant="ghost" size="icon" className="relative">
-                  <Heart className="h-5 w-5" />
-                  {wishlistItems > 0 && (
-                    <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 bg-luxury-gold text-black text-xs flex items-center justify-center">
-                      {wishlistItems}
-                    </Badge>
-                  )}
-                </Button>
 
                 <Link to="/cart" onClick={() => setIsMobileMenuOpen(false)}>
                   <Button variant="ghost" size="icon" className="relative">

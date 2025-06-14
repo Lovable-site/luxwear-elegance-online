@@ -9,7 +9,6 @@ const AuthenticatedNavbar = () => {
   const { user, userRole, signOut, refreshUserRole } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const cartItems = 0; // This will be managed by cart context later
-  const wishlistItems = 0; // This will be managed by wishlist context later
 
   // Debug logging
   useEffect(() => {
@@ -90,14 +89,7 @@ const AuthenticatedNavbar = () => {
 
             {/* User button removed for authenticated users */}
 
-            <Button variant="ghost" size="icon" className="relative">
-              <Heart className="h-5 w-5" />
-              {wishlistItems > 0 && (
-                <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 bg-luxury-gold text-black text-xs flex items-center justify-center">
-                  {wishlistItems}
-                </Badge>
-              )}
-            </Button>
+            {/* Wishlist button removed */}
 
             <Link to="/cart">
               <Button variant="ghost" size="icon" className="relative">
@@ -190,15 +182,7 @@ const AuthenticatedNavbar = () => {
 
                 <div className="flex items-center space-x-4">
                   {/* User button removed for authenticated users */}
-                  
-                  <Button variant="ghost" size="icon" className="relative">
-                    <Heart className="h-5 w-5" />
-                    {wishlistItems > 0 && (
-                      <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 bg-luxury-gold text-black text-xs flex items-center justify-center">
-                        {wishlistItems}
-                      </Badge>
-                    )}
-                  </Button>
+                  {/* Wishlist button removed */}
 
                   <Link to="/cart" onClick={() => setIsMobileMenuOpen(false)}>
                     <Button variant="ghost" size="icon" className="relative">
