@@ -76,7 +76,7 @@ const AuthenticatedNavbar = () => {
                 Role: {userRole || 'loading...'}
               </span>
             )}
-            
+
             {userRole === 'admin' && (
               <>
                 <Link to="/admin">
@@ -85,15 +85,9 @@ const AuthenticatedNavbar = () => {
                     <span>Admin Panel</span>
                   </Button>
                 </Link>
-                <Link to="/">
-                  <Button variant="outline" className="flex items-center space-x-2">
-                    <Store className="h-4 w-4" />
-                    <span>View Store</span>
-                  </Button>
-                </Link>
               </>
             )}
-            
+
             <Button variant="ghost" size="icon">
               <User className="h-5 w-5" />
             </Button>
@@ -191,12 +185,6 @@ const AuthenticatedNavbar = () => {
                       <Button variant="outline" className="w-full flex items-center space-x-2 bg-luxury-gold/10 border-luxury-gold text-luxury-gold hover:bg-luxury-gold hover:text-black">
                         <Shield className="h-4 w-4" />
                         <span>Admin Panel</span>
-                      </Button>
-                    </Link>
-                    <Link to="/" onClick={() => setIsMobileMenuOpen(false)}>
-                      <Button variant="outline" className="w-full flex items-center space-x-2">
-                        <Store className="h-4 w-4" />
-                        <span>View Store</span>
                       </Button>
                     </Link>
                   </>
