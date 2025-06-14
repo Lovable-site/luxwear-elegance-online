@@ -7,6 +7,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/context/CartContext";
 import { toast } from "sonner";
 
+// Utility to check for valid UUID (simple version)
+function isValidUUID(str: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+}
+
 interface Product {
   id: string | number;
   name: string;
@@ -27,12 +32,20 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
+    // Patch: Prevent adding products without a valid UUID id to cart
+    const productId = String(product.id);
+    if (!isValidUUID(productId)) {
+      toast.error("Invalid product ID. Cannot add to cart. (Are you using demo/mock data?)");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       console.log('[ProductCard] Adding product to cart:', product);
-      
+
       const cartItem = {
-        id: String(product.id), // Convert to string for consistency
+        id: productId,
         name: product.name,
         price: product.price,
         image: product.image,
