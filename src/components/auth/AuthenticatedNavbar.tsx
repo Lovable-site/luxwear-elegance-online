@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -185,7 +184,7 @@ const AuthenticatedNavbar = () => {
                     Role: {userRole || 'loading...'}
                   </span>
                 )}
-                
+
                 {userRole === 'admin' && (
                   <>
                     <Link to="/admin" onClick={() => setIsMobileMenuOpen(false)}>
