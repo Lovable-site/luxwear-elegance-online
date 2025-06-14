@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Outlet, Navigate, Link, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,7 +11,8 @@ import {
   Settings, 
   LogOut,
   Menu,
-  X
+  X,
+  Store
 } from "lucide-react";
 
 const AdminLayout = () => {
@@ -89,12 +89,14 @@ const AdminLayout = () => {
     return <Navigate to="/login" replace />;
   }
 
+  // Add "View Store" to navigation items
   const navigation = [
     { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
     { name: 'Products', href: '/admin/products', icon: Package },
     { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
     { name: 'Users', href: '/admin/users', icon: Users },
     { name: 'Settings', href: '/admin/settings', icon: Settings },
+    { name: 'View Store', href: '/', icon: Store },
   ];
 
   return (
