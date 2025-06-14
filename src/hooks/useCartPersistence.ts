@@ -1,7 +1,9 @@
+
 import { useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/context/CartContext";
 import { DataService } from "@/services/dataService";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export const useCartPersistence = () => {
