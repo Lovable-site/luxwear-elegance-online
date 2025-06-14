@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,32 +7,137 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Settings, Store, CreditCard, Truck } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+const DEFAULT_SYSTEM_SETTINGS = {
+  email_notifications: {
+    order: true,
+    low_stock: true,
+    daily_reports: false,
+  },
+  security: {
+    "2fa": true,
+    login_notifications: true,
+  },
+};
 
 const AdminSettings = () => {
   const [storeSettings, setStoreSettings] = useState({
-    storeName: 'LuxuriqWear',
-    storeDescription: 'Premium luxury fashion for the discerning customer',
-    storeEmail: 'admin@luxuriqwear.com',
-    storePhone: '+1 (555) 123-4567',
-    currency: 'USD',
-    taxRate: '8.5'
+    storeName: "",
+    storeDescription: "",
+    storeEmail: "",
+    storePhone: "",
+    currency: "",
+    taxRate: ""
   });
 
   const [shippingSettings, setShippingSettings] = useState({
-    freeShippingThreshold: '100',
-    standardShippingRate: '9.99',
-    expressShippingRate: '19.99'
+    freeShippingThreshold: "",
+    standardShippingRate: "",
+    expressShippingRate: ""
   });
 
-  const handleSaveStoreSettings = () => {
-    console.log('Saving store settings:', storeSettings);
-    // Here you would save to your backend
+  const [systemSettings, setSystemSettings] = useState(DEFAULT_SYSTEM_SETTINGS);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch settings on mount
+  useEffect(() => {
+    const fetchSettings = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('store_settings')
+        .select('*')
+        .limit(1)
+        .maybeSingle();
+      if (error) {
+        toast.error("Failed to load settings");
+        setLoading(false);
+        return;
+      }
+      if (data) {
+        setStoreSettings({
+          storeName: data.store_name || "",
+          storeDescription: data.store_description || "",
+          storeEmail: data.store_email || "",
+          storePhone: data.store_phone || "",
+          currency: data.currency || "",
+          taxRate: data.tax_rate !== null && data.tax_rate !== undefined ? String(data.tax_rate) : ""
+        });
+        setShippingSettings({
+          freeShippingThreshold: data.free_shipping_threshold !== null && data.free_shipping_threshold !== undefined ? String(data.free_shipping_threshold) : "",
+          standardShippingRate: data.standard_shipping_rate !== null && data.standard_shipping_rate !== undefined ? String(data.standard_shipping_rate) : "",
+          expressShippingRate: data.express_shipping_rate !== null && data.express_shipping_rate !== undefined ? String(data.express_shipping_rate) : ""
+        });
+        setSystemSettings(data.system_settings || DEFAULT_SYSTEM_SETTINGS);
+      }
+      setLoading(false);
+    };
+    fetchSettings();
+  }, []);
+
+  // Handle toggling notification/security settings
+  const handleSysCheckbox = (section: string, field: string, value: boolean) => {
+    setSystemSettings((prev: any) => ({
+      ...prev,
+      [section]: {
+        ...prev[section],
+        [field]: value
+      }
+    }));
   };
 
-  const handleSaveShippingSettings = () => {
-    console.log('Saving shipping settings:', shippingSettings);
-    // Here you would save to your backend
+  const upsertSettings = async (newSystemSettingsOverride?: any) => {
+    // Map to database column format
+    const payload = {
+      store_name: storeSettings.storeName,
+      store_description: storeSettings.storeDescription,
+      store_email: storeSettings.storeEmail,
+      store_phone: storeSettings.storePhone,
+      currency: storeSettings.currency,
+      tax_rate: storeSettings.taxRate !== "" ? parseFloat(storeSettings.taxRate) : null,
+      free_shipping_threshold: shippingSettings.freeShippingThreshold !== "" ? parseFloat(shippingSettings.freeShippingThreshold) : null,
+      standard_shipping_rate: shippingSettings.standardShippingRate !== "" ? parseFloat(shippingSettings.standardShippingRate) : null,
+      express_shipping_rate: shippingSettings.expressShippingRate !== "" ? parseFloat(shippingSettings.expressShippingRate) : null,
+      system_settings: newSystemSettingsOverride ?? systemSettings,
+      updated_at: new Date().toISOString()
+    };
+
+    const { error } = await supabase
+      .from('store_settings')
+      .upsert(payload, { onConflict: 'id' });
+
+    if (error) {
+      toast.error("Failed to save settings.");
+      return false;
+    }
+    toast.success("Settings saved!");
+    return true;
   };
+
+  const handleSaveStoreSettings = async () => {
+    await upsertSettings();
+  };
+
+  const handleSaveFinancialSettings = async () => {
+    await upsertSettings();
+  };
+
+  const handleSaveShippingSettings = async () => {
+    await upsertSettings();
+  };
+
+  const handleSaveSystemSettings = async () => {
+    await upsertSettings();
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-luxury-gold"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -59,7 +164,6 @@ const AdminSettings = () => {
                 onChange={(e) => setStoreSettings({ ...storeSettings, storeName: e.target.value })}
               />
             </div>
-
             <div>
               <Label htmlFor="storeDescription">Store Description</Label>
               <Textarea
@@ -69,7 +173,6 @@ const AdminSettings = () => {
                 rows={3}
               />
             </div>
-
             <div>
               <Label htmlFor="storeEmail">Store Email</Label>
               <Input
@@ -79,7 +182,6 @@ const AdminSettings = () => {
                 onChange={(e) => setStoreSettings({ ...storeSettings, storeEmail: e.target.value })}
               />
             </div>
-
             <div>
               <Label htmlFor="storePhone">Store Phone</Label>
               <Input
@@ -88,7 +190,6 @@ const AdminSettings = () => {
                 onChange={(e) => setStoreSettings({ ...storeSettings, storePhone: e.target.value })}
               />
             </div>
-
             <Button onClick={handleSaveStoreSettings} className="w-full bg-luxury-gold text-black hover:bg-yellow-400">
               Save Store Settings
             </Button>
@@ -112,7 +213,6 @@ const AdminSettings = () => {
                 onChange={(e) => setStoreSettings({ ...storeSettings, currency: e.target.value })}
               />
             </div>
-
             <div>
               <Label htmlFor="taxRate">Tax Rate (%)</Label>
               <Input
@@ -123,9 +223,7 @@ const AdminSettings = () => {
                 onChange={(e) => setStoreSettings({ ...storeSettings, taxRate: e.target.value })}
               />
             </div>
-
             <Separator />
-
             <div className="space-y-3">
               <h4 className="font-medium">Payment Methods</h4>
               <div className="space-y-2">
@@ -134,8 +232,7 @@ const AdminSettings = () => {
                 <p className="text-sm text-gray-600">Apple Pay: Enabled</p>
               </div>
             </div>
-
-            <Button onClick={handleSaveStoreSettings} className="w-full bg-luxury-gold text-black hover:bg-yellow-400">
+            <Button onClick={handleSaveFinancialSettings} className="w-full bg-luxury-gold text-black hover:bg-yellow-400">
               Save Financial Settings
             </Button>
           </CardContent>
@@ -159,7 +256,6 @@ const AdminSettings = () => {
                 onChange={(e) => setShippingSettings({ ...shippingSettings, freeShippingThreshold: e.target.value })}
               />
             </div>
-
             <div>
               <Label htmlFor="standardShippingRate">Standard Shipping Rate ($)</Label>
               <Input
@@ -170,7 +266,6 @@ const AdminSettings = () => {
                 onChange={(e) => setShippingSettings({ ...shippingSettings, standardShippingRate: e.target.value })}
               />
             </div>
-
             <div>
               <Label htmlFor="expressShippingRate">Express Shipping Rate ($)</Label>
               <Input
@@ -181,7 +276,6 @@ const AdminSettings = () => {
                 onChange={(e) => setShippingSettings({ ...shippingSettings, expressShippingRate: e.target.value })}
               />
             </div>
-
             <Button onClick={handleSaveShippingSettings} className="w-full bg-luxury-gold text-black hover:bg-yellow-400">
               Save Shipping Settings
             </Button>
@@ -201,37 +295,54 @@ const AdminSettings = () => {
               <h4 className="font-medium">Email Notifications</h4>
               <div className="space-y-2">
                 <label className="flex items-center space-x-2">
-                  <input type="checkbox" defaultChecked className="rounded" />
+                  <input type="checkbox"
+                    checked={!!systemSettings.email_notifications?.order}
+                    onChange={(e) => handleSysCheckbox("email_notifications", "order", e.target.checked)}
+                    className="rounded"
+                  />
                   <span className="text-sm">New order notifications</span>
                 </label>
                 <label className="flex items-center space-x-2">
-                  <input type="checkbox" defaultChecked className="rounded" />
+                  <input type="checkbox"
+                    checked={!!systemSettings.email_notifications?.low_stock}
+                    onChange={(e) => handleSysCheckbox("email_notifications", "low_stock", e.target.checked)}
+                    className="rounded"
+                  />
                   <span className="text-sm">Low stock alerts</span>
                 </label>
                 <label className="flex items-center space-x-2">
-                  <input type="checkbox" className="rounded" />
+                  <input type="checkbox"
+                    checked={!!systemSettings.email_notifications?.daily_reports}
+                    onChange={(e) => handleSysCheckbox("email_notifications", "daily_reports", e.target.checked)}
+                    className="rounded"
+                  />
                   <span className="text-sm">Daily sales reports</span>
                 </label>
               </div>
             </div>
-
             <Separator />
-
             <div className="space-y-3">
               <h4 className="font-medium">Security</h4>
               <div className="space-y-2">
                 <label className="flex items-center space-x-2">
-                  <input type="checkbox" defaultChecked className="rounded" />
+                  <input type="checkbox"
+                    checked={!!systemSettings.security?.["2fa"]}
+                    onChange={(e) => handleSysCheckbox("security", "2fa", e.target.checked)}
+                    className="rounded"
+                  />
                   <span className="text-sm">Two-factor authentication</span>
                 </label>
                 <label className="flex items-center space-x-2">
-                  <input type="checkbox" defaultChecked className="rounded" />
+                  <input type="checkbox"
+                    checked={!!systemSettings.security?.login_notifications}
+                    onChange={(e) => handleSysCheckbox("security", "login_notifications", e.target.checked)}
+                    className="rounded"
+                  />
                   <span className="text-sm">Login notifications</span>
                 </label>
               </div>
             </div>
-
-            <Button className="w-full bg-luxury-gold text-black hover:bg-yellow-400">
+            <Button onClick={handleSaveSystemSettings} className="w-full bg-luxury-gold text-black hover:bg-yellow-400">
               Save System Settings
             </Button>
           </CardContent>
@@ -242,3 +353,4 @@ const AdminSettings = () => {
 };
 
 export default AdminSettings;
+

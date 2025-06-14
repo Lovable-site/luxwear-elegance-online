@@ -250,6 +250,51 @@ export type Database = {
         }
         Relationships: []
       }
+      store_settings: {
+        Row: {
+          currency: string | null
+          express_shipping_rate: number | null
+          free_shipping_threshold: number | null
+          id: string
+          standard_shipping_rate: number | null
+          store_description: string | null
+          store_email: string | null
+          store_name: string | null
+          store_phone: string | null
+          system_settings: Json | null
+          tax_rate: number | null
+          updated_at: string
+        }
+        Insert: {
+          currency?: string | null
+          express_shipping_rate?: number | null
+          free_shipping_threshold?: number | null
+          id?: string
+          standard_shipping_rate?: number | null
+          store_description?: string | null
+          store_email?: string | null
+          store_name?: string | null
+          store_phone?: string | null
+          system_settings?: Json | null
+          tax_rate?: number | null
+          updated_at?: string
+        }
+        Update: {
+          currency?: string | null
+          express_shipping_rate?: number | null
+          free_shipping_threshold?: number | null
+          id?: string
+          standard_shipping_rate?: number | null
+          store_description?: string | null
+          store_email?: string | null
+          store_name?: string | null
+          store_phone?: string | null
+          system_settings?: Json | null
+          tax_rate?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       wishlist: {
         Row: {
           created_at: string
