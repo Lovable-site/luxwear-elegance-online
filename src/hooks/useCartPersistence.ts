@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/context/CartContext";
@@ -23,81 +23,86 @@ function mergeCarts(localCart, dbCart) {
 export const useCartPersistence = () => {
   const { user } = useAuth();
   const { cartItems, setCartItems } = useCart();
+  const dbCartLoadedRef = useRef(false);
+  const isLoadingRef = useRef(false);
 
-  // Track if cart has been loaded from DB (so we don't overwrite unnecessarily)
-  let dbCartLoaded = false;
-
-  // Load cart from database when user logs in
+  // Load cart from database when user logs in (only once)
   useEffect(() => {
-    if (user) {
+    if (user && !dbCartLoadedRef.current && !isLoadingRef.current) {
       console.log('[CartPersistence] Loading cart from database for user:', user.email);
+      isLoadingRef.current = true;
 
       (async () => {
-        // Fetch cart items from DB
-        const { data: cartData, error } = await supabase
-          .from('cart_items')
-          .select(`
-            *,
-            products (
-              id,
-              name,
-              price,
-              images
-            )
-          `)
-          .eq('user_id', user.id);
+        try {
+          // Fetch cart items from DB
+          const { data: cartData, error } = await supabase
+            .from('cart_items')
+            .select(`
+              *,
+              products (
+                id,
+                name,
+                price,
+                images
+              )
+            `)
+            .eq('user_id', user.id);
 
-        if (error) {
-          console.error('[CartPersistence] Error loading cart:', error);
-          toast.error('Failed to load cart from database');
-          return;
+          if (error) {
+            console.error('[CartPersistence] Error loading cart:', error);
+            toast.error('Failed to load cart from database');
+            return;
+          }
+
+          const dbCart = cartData?.map(item => ({
+            id: String(item.product_id),
+            name: item.products?.name || 'Unknown Product',
+            price: Number(item.products?.price) || 0,
+            image: item.products?.images?.[0] || '/placeholder.svg',
+            size: item.size || 'M',
+            color: 'Default',
+            quantity: item.quantity
+          })) || [];
+
+          // Compare with local cart
+          const localCart = JSON.parse(localStorage.getItem("cart") || "[]");
+
+          if (dbCart.length === 0 && localCart.length > 0) {
+            // DB is empty, but local cart has items: keep local cart & sync to DB
+            console.log("[CartPersistence] Local cart present, DB empty. Keeping local cart & syncing to DB.");
+            // Don't change cartItems here, just sync current state
+            await syncCartToDatabase();
+          } else if (dbCart.length > 0 && localCart.length === 0) {
+            // DB has items, local cart is empty: set to DB cart
+            console.log("[CartPersistence] DB has cart, local is empty. Loading DB cart.");
+            setCartItems(dbCart);
+          } else if (dbCart.length > 0 && localCart.length > 0) {
+            // Both have items: merge and sync
+            const merged = mergeCarts(localCart, dbCart);
+            setCartItems(merged);
+            console.log("[CartPersistence] Both carts have items. Merging and syncing.");
+          }
+          
+          dbCartLoadedRef.current = true;
+        } catch (error) {
+          console.error('[CartPersistence] Error in cart loading:', error);
+        } finally {
+          isLoadingRef.current = false;
         }
-
-        const dbCart = cartData?.map(item => ({
-          id: String(item.product_id),
-          name: item.products?.name || 'Unknown Product',
-          price: Number(item.products?.price) || 0,
-          image: item.products?.images?.[0] || '/placeholder.svg',
-          size: item.size || 'M',
-          color: 'Default',
-          quantity: item.quantity
-        })) || [];
-
-        // Compare with local cart
-        const localCart = JSON.parse(localStorage.getItem("cart") || "[]");
-
-        if (dbCart.length === 0 && localCart.length > 0) {
-          // DB is empty, but local cart has items: push local cart to state & sync to DB
-          console.log("[CartPersistence] Local cart present, DB empty. Keeping local cart & syncing to DB.");
-          setCartItems(localCart); // This triggers syncCartToDatabase below
-        } else if (dbCart.length > 0 && localCart.length === 0) {
-          // DB has items, local cart is empty: set to DB cart
-          console.log("[CartPersistence] DB has cart, local is empty. Loading DB cart.");
-          setCartItems(dbCart);
-        } else if (dbCart.length > 0 && localCart.length > 0) {
-          // Both have items: merge and sync
-          const merged = mergeCarts(localCart, dbCart);
-          setCartItems(merged); // This will trigger syncCartToDatabase below
-          console.log("[CartPersistence] Both carts have items. Merging and syncing.");
-        } // else, both empty: set empty, nothing to do
-        dbCartLoaded = true;
       })();
     }
-    // Only run this logic on login
-    // eslint-disable-next-line
+  }, [user]); // Only depend on user, not cartItems
+
+  // Reset loading flag when user logs out
+  useEffect(() => {
+    if (!user) {
+      dbCartLoadedRef.current = false;
+      isLoadingRef.current = false;
+    }
   }, [user]);
 
-  // Sync cart to database when cart changes (for logged-in users)
-  useEffect(() => {
-    if (user && cartItems.length >= 0) {
-      // Don't sync unless we've loaded DB cart at least once (prevents immediate empty overwrite)
-      syncCartToDatabase();
-    }
-    // eslint-disable-next-line
-  }, [cartItems, user]);
-
   const syncCartToDatabase = async () => {
-    if (!user) return;
+    if (!user || isLoadingRef.current) return;
 
     try {
       // Clear existing cart items for this user
@@ -163,7 +168,7 @@ export const useCartPersistence = () => {
       // Create order items
       const orderItems = cartItems.map(item => ({
         order_id: order.id,
-        product_id: String(item.id), // Ensure it's a string
+        product_id: String(item.id),
         quantity: item.quantity,
         price: item.price,
         size: item.size || null

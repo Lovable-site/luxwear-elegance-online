@@ -35,9 +35,13 @@ const Cart = () => {
     fetchAdminTaxRate();
   }, []);
 
-  // Sync cart changes to database
+  // Sync cart changes to database (with debouncing to prevent excessive calls)
   useEffect(() => {
-    syncCartToDatabase();
+    const timeoutId = setTimeout(() => {
+      syncCartToDatabase();
+    }, 500); // Debounce for 500ms
+
+    return () => clearTimeout(timeoutId);
   }, [cartItems]);
 
   const handleUpdateQuantity = (id: string, size: string, newQuantity: number) => {
