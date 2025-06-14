@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -26,28 +27,22 @@ const Navbar = () => {
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
               <Link 
+                to="/" 
+                className="text-gray-800 hover:text-luxury-gold transition-colors duration-200"
+              >
+                Home
+              </Link>
+              <Link 
                 to="/products" 
                 className="text-gray-800 hover:text-luxury-gold transition-colors duration-200"
               >
-                Collections
+                Category
               </Link>
               <Link 
-                to="/products?category=women" 
+                to="/contact" 
                 className="text-gray-800 hover:text-luxury-gold transition-colors duration-200"
               >
-                Women
-              </Link>
-              <Link 
-                to="/products?category=men" 
-                className="text-gray-800 hover:text-luxury-gold transition-colors duration-200"
-              >
-                Men
-              </Link>
-              <Link 
-                to="/products?category=accessories" 
-                className="text-gray-800 hover:text-luxury-gold transition-colors duration-200"
-              >
-                Accessories
+                Contact Us
               </Link>
             </div>
 
@@ -92,32 +87,25 @@ const Navbar = () => {
             <div className="md:hidden py-4 border-t border-gray-200">
               <div className="flex flex-col space-y-4">
                 <Link 
+                  to="/" 
+                  className="text-gray-800 hover:text-luxury-gold transition-colors duration-200"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Home
+                </Link>
+                <Link 
                   to="/products" 
                   className="text-gray-800 hover:text-luxury-gold transition-colors duration-200"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  Collections
+                  Category
                 </Link>
                 <Link 
-                  to="/products?category=women" 
+                  to="/contact" 
                   className="text-gray-800 hover:text-luxury-gold transition-colors duration-200"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  Women
-                </Link>
-                <Link 
-                  to="/products?category=men" 
-                  className="text-gray-800 hover:text-luxury-gold transition-colors duration-200"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Men
-                </Link>
-                <Link 
-                  to="/products?category=accessories" 
-                  className="text-gray-800 hover:text-luxury-gold transition-colors duration-200"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Accessories
+                  Contact Us
                 </Link>
                 
                 <div className="flex items-center space-x-4 pt-4 border-t border-gray-200">
