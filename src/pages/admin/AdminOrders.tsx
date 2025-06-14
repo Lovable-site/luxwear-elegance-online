@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,8 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Search, Eye, X } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Search, Eye, X, Trash2 } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
 type OrderStatus = Database['public']['Enums']['order_status'];
@@ -80,6 +81,32 @@ const AdminOrders = () => {
       fetchOrders();
     } catch (error) {
       console.error('Error updating order status:', error);
+    }
+  };
+
+  const deleteOrder = async (orderId: string) => {
+    try {
+      // First delete order items
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .delete()
+        .eq('order_id', orderId);
+
+      if (itemsError) throw itemsError;
+
+      // Then delete the order
+      const { error: orderError } = await supabase
+        .from('orders')
+        .delete()
+        .eq('id', orderId);
+
+      if (orderError) throw orderError;
+
+      toast.success('Order deleted successfully');
+      fetchOrders();
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      toast.error('Failed to delete order');
     }
   };
 
@@ -206,6 +233,35 @@ const AdminOrders = () => {
                     <Eye className="h-4 w-4 mr-1" />
                     View
                   </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full sm:w-auto text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Delete
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Order</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete order #{order.id.slice(0, 8)}? This action cannot be undone and will permanently remove the order and all associated items from the database.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => deleteOrder(order.id)}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          Delete Order
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
             </CardContent>

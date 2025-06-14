@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -144,6 +143,34 @@ export class DataService {
     }
 
     return data;
+  }
+
+  static async deleteOrder(orderId: string) {
+    console.log('[DataService] Deleting order:', orderId);
+    
+    // First delete order items
+    const { error: itemsError } = await supabase
+      .from('order_items')
+      .delete()
+      .eq('order_id', orderId);
+
+    if (itemsError) {
+      console.error('[DataService] Error deleting order items:', itemsError);
+      throw itemsError;
+    }
+
+    // Then delete the order
+    const { error: orderError } = await supabase
+      .from('orders')
+      .delete()
+      .eq('id', orderId);
+
+    if (orderError) {
+      console.error('[DataService] Error deleting order:', orderError);
+      throw orderError;
+    }
+
+    return { success: true };
   }
 
   // User Management (Admin)
