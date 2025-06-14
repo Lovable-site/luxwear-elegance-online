@@ -8,11 +8,16 @@ import { Trash2, Plus, Minus, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import { useCart } from "@/context/CartContext";
 import { useCartSync } from "@/hooks/useCartSync";
+import { useCartPersistence } from "@/hooks/useCartPersistence";
 import { supabase } from "@/integrations/supabase/client";
 
 const Cart = () => {
   const { cartItems, updateQuantity, removeFromCart } = useCart();
-  useCartSync(); // Handle automatic syncing
+  
+  // Initialize cart persistence and syncing
+  useCartPersistence();
+  useCartSync();
+  
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState("");
   const [taxRate, setTaxRate] = useState<number>(0.08);
