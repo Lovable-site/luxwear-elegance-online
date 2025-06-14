@@ -6,6 +6,7 @@ import { Heart, ShoppingBag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/context/CartContext";
 import { toast } from "sonner";
 
 interface Product {
@@ -22,15 +23,14 @@ interface ProductCardProps {
 
 const ProductCard = ({ product }: ProductCardProps) => {
   const [isLoading, setIsLoading] = useState(false);
-
-  // Wishlist integration
   const { user } = useAuth();
+  const { cartItems, setCartItems } = useCart();
   const { wishlist, addToWishlist, removeFromWishlist, isLoading: wishLoading } = useWishlist();
 
   const isWishlisted = wishlist.includes(String(product.id));
 
   const handleWishlist = async (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent navigation if in Link or overlay
+    e.preventDefault();
     if (!user) {
       toast.error("Please sign in to use your wishlist.");
       return;
@@ -42,13 +42,43 @@ const ProductCard = ({ product }: ProductCardProps) => {
     }
   };
 
-  const handleAddToCart = async () => {
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.preventDefault();
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+    
+    try {
+      const cartItem = {
+        id: Number(product.id),
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        size: "M", // Default size, could be made configurable
+        color: "Default",
+        quantity: 1
+      };
+
+      // Check if item already exists in cart
+      const existingItemIndex = cartItems.findIndex(item => 
+        item.id === cartItem.id && item.size === cartItem.size
+      );
+
+      if (existingItemIndex >= 0) {
+        // Update quantity if item exists
+        const updatedItems = [...cartItems];
+        updatedItems[existingItemIndex].quantity += 1;
+        setCartItems(updatedItems);
+      } else {
+        // Add new item to cart
+        setCartItems([...cartItems, cartItem]);
+      }
+
+      toast.success(`${product.name} added to cart!`);
+    } catch (error) {
+      toast.error("Failed to add item to cart");
+      console.error('Error adding to cart:', error);
+    } finally {
       setIsLoading(false);
-      console.log(`Added ${product.name} to cart`);
-    }, 500);
+    }
   };
 
   return (

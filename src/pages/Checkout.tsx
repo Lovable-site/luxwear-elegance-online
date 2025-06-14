@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { ShoppingCart, CreditCard } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "@/context/CartContext";
+import { useCartPersistence } from "@/hooks/useCartPersistence";
 
 type ShippingFields = {
   fullName: string;
@@ -19,7 +20,8 @@ type ShippingFields = {
 const initialShipping = { fullName: "", address: "", city: "", postalCode: "", country: "" };
 
 export default function Checkout() {
-  const { cartItems, clearCart, setCartItems } = useCart();
+  const { cartItems, clearCart } = useCart();
+  const { createOrder } = useCartPersistence();
   const [shipping, setShipping] = useState<ShippingFields>(initialShipping);
   const [errors, setErrors] = useState<Partial<ShippingFields>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -29,7 +31,7 @@ export default function Checkout() {
 
   // Price calculations
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const discount = subtotal > 500 ? subtotal * 0.1 : 0; // Example: 10% off for >$500
+  const discount = subtotal > 500 ? subtotal * 0.1 : 0;
   const shippingCost = subtotal > 200 ? 0 : 25;
   const tax = (subtotal - discount) * 0.08;
   const total = subtotal - discount + shippingCost + tax;
@@ -56,22 +58,34 @@ export default function Checkout() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (submitting) return;
+    
     const fieldErrors = validate(shipping);
     setErrors(fieldErrors);
     if (Object.keys(fieldErrors).length > 0) return;
 
     setSubmitting(true);
 
-    // Simulate API
-    setTimeout(() => {
-      // Clear cart & show confirmation
+    try {
+      // Create order in database
+      await createOrder({
+        street: shipping.address,
+        city: shipping.city,
+        state: shipping.country, // Using country as state for simplicity
+        zip: shipping.postalCode,
+        full_name: shipping.fullName
+      });
+
+      // Clear cart and show success
       clearCart();
       setOrderSuccess(true);
-      toast.success("Order placed! Confirmation sent.");
-      setSubmitting(false);
+      toast.success("Order placed successfully! Confirmation will be sent to your email.");
       setShipping(initialShipping);
-      // Optionally: navigate("/order-summary") after delay
-    }, 1300);
+    } catch (error) {
+      console.error('Error placing order:', error);
+      toast.error("Failed to place order. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (orderSuccess) {
@@ -85,7 +99,7 @@ export default function Checkout() {
           <CardContent>
             <div className="mb-5 text-center">
               <div className="text-2xl font-bold mb-2 text-green-600">Thank you!</div>
-              <div>Your order has been placed successfully.</div>
+              <div>Your order has been placed successfully and will be processed soon.</div>
             </div>
             <Link to="/">
               <Button className="w-full bg-luxury-gold text-black font-semibold mt-2">
@@ -115,12 +129,10 @@ export default function Checkout() {
               </div>
               {cartItems.length > 0 && (
                 <div className="mb-2 max-h-32 overflow-y-auto">
-                  {cartItems.map((item) => (
-                    <div key={item.id} className="flex justify-between text-sm text-gray-700">
+                  {cartItems.map((item, index) => (
+                    <div key={`${item.id}-${item.size}-${index}`} className="flex justify-between text-sm text-gray-700">
                       <div>
-                        {item.name}
-                        {" x"}
-                        {item.quantity}
+                        {item.name} (Size: {item.size}) x{item.quantity}
                       </div>
                       <div>${(item.price * item.quantity).toFixed(2)}</div>
                     </div>
@@ -161,6 +173,7 @@ export default function Checkout() {
                 disabled={submitting}
               />
               {errors.fullName && <div className="text-red-600 text-xs">{errors.fullName}</div>}
+              
               <Input
                 placeholder="Address"
                 value={shipping.address}
@@ -168,6 +181,7 @@ export default function Checkout() {
                 disabled={submitting}
               />
               {errors.address && <div className="text-red-600 text-xs">{errors.address}</div>}
+              
               <Input
                 placeholder="City"
                 value={shipping.city}
@@ -175,6 +189,7 @@ export default function Checkout() {
                 disabled={submitting}
               />
               {errors.city && <div className="text-red-600 text-xs">{errors.city}</div>}
+              
               <Input
                 placeholder="Postal Code"
                 value={shipping.postalCode}
@@ -182,6 +197,7 @@ export default function Checkout() {
                 disabled={submitting}
               />
               {errors.postalCode && <div className="text-red-600 text-xs">{errors.postalCode}</div>}
+              
               <Input
                 placeholder="Country"
                 value={shipping.country}
@@ -193,7 +209,7 @@ export default function Checkout() {
 
             {/* Payment - Placeholder */}
             <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-xs text-yellow-800 mb-2">
-              Payment functionality coming soon. No real card info is collected yet.
+              Payment processing is simulated. Orders will be saved to your account.
             </div>
 
             <Button

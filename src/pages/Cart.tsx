@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,27 +7,28 @@ import { Separator } from "@/components/ui/separator";
 import { Trash2, Plus, Minus, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import { useCart } from "@/context/CartContext";
+import { useCartPersistence } from "@/hooks/useCartPersistence";
 
 const Cart = () => {
-  const { cartItems, setCartItems } = useCart();
-
+  const { cartItems, updateQuantity, removeFromCart } = useCart();
+  const { syncCartToDatabase } = useCartPersistence();
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState("");
 
-  const updateQuantity = (id: number, newQuantity: number) => {
+  // Sync cart changes to database
+  useEffect(() => {
+    syncCartToDatabase();
+  }, [cartItems]);
+
+  const handleUpdateQuantity = (id: number, size: string, newQuantity: number) => {
+    updateQuantity(id, size, newQuantity);
     if (newQuantity <= 0) {
-      removeItem(id);
-      return;
+      toast.success("Item removed from cart");
     }
-    setCartItems(items =>
-      items.map(item =>
-        item.id === id ? { ...item, quantity: newQuantity } : item
-      )
-    );
   };
 
-  const removeItem = (id: number) => {
-    setCartItems(items => items.filter(item => item.id !== id));
+  const handleRemoveItem = (id: number, size: string) => {
+    removeFromCart(id, size);
     toast.success("Item removed from cart");
   };
 
@@ -74,15 +76,15 @@ const Cart = () => {
             Shopping Cart
           </h1>
           <p className="text-gray-600">
-            {cartItems.length} item{cartItems.length !== 1 ? 's' : ''} in your cart
+            {cartItems.reduce((sum, item) => sum + item.quantity, 0)} item{cartItems.reduce((sum, item) => sum + item.quantity, 0) !== 1 ? 's' : ''} in your cart
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-4">
-            {cartItems.map((item) => (
-              <div key={item.id} className="bg-white rounded-lg shadow-sm p-6">
+            {cartItems.map((item, index) => (
+              <div key={`${item.id}-${item.size}-${index}`} className="bg-white rounded-lg shadow-sm p-6">
                 <div className="flex items-start space-x-4">
                   <div className="flex-shrink-0">
                     <img
@@ -108,7 +110,7 @@ const Cart = () => {
                     {/* Quantity Controls */}
                     <div className="flex items-center space-x-2">
                       <button
-                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        onClick={() => handleUpdateQuantity(item.id, item.size, item.quantity - 1)}
                         className="w-8 h-8 rounded-md border border-gray-300 flex items-center justify-center hover:border-luxury-gold transition-colors"
                       >
                         <Minus className="h-4 w-4" />
@@ -117,7 +119,7 @@ const Cart = () => {
                         {item.quantity}
                       </span>
                       <button
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        onClick={() => handleUpdateQuantity(item.id, item.size, item.quantity + 1)}
                         className="w-8 h-8 rounded-md border border-gray-300 flex items-center justify-center hover:border-luxury-gold transition-colors"
                       >
                         <Plus className="h-4 w-4" />
@@ -126,7 +128,7 @@ const Cart = () => {
 
                     {/* Remove Button */}
                     <button
-                      onClick={() => removeItem(item.id)}
+                      onClick={() => handleRemoveItem(item.id, item.size)}
                       className="text-red-500 hover:text-red-700 transition-colors"
                     >
                       <Trash2 className="h-5 w-5" />
