@@ -12,7 +12,8 @@ import {
   LogOut,
   Menu,
   X,
-  Store
+  Store,
+  Folders
 } from "lucide-react";
 
 const AdminLayout = () => {
@@ -89,10 +90,11 @@ const AdminLayout = () => {
     return <Navigate to="/login" replace />;
   }
 
-  // Add "View Store" to navigation items
+  // Add Collections to navigation items
   const navigation = [
     { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
     { name: 'Products', href: '/admin/products', icon: Package },
+    { name: 'Collections', href: '/admin/collections', icon: Folders },
     { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
     { name: 'Users', href: '/admin/users', icon: Users },
     { name: 'Settings', href: '/admin/settings', icon: Settings },

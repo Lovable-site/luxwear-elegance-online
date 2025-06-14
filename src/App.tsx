@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -20,6 +19,7 @@ import AdminProducts from "./pages/admin/AdminProducts";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminCollections from "@/pages/admin/AdminCollections";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Navbar from "./components/Navbar";
 import AuthenticatedNavbar from "./components/auth/AuthenticatedNavbar";
@@ -57,6 +57,7 @@ const AppContent = () => {
           <Route path="orders" element={<AdminOrders />} />
           <Route path="users" element={<AdminUsers />} />
           <Route path="settings" element={<AdminSettings />} />
+          <Route path="collections" element={<AdminCollections />} />
         </Route>
         
         {/* Public Routes */}
