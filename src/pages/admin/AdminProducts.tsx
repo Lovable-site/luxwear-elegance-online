@@ -1,11 +1,12 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Plus, Search, Edit, Trash2, Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner";
 import ProductForm from "@/components/admin/ProductForm";
 
 interface Product {
@@ -67,19 +68,50 @@ const AdminProducts = () => {
     }
   };
 
-  const handleDeleteProduct = async (productId: string) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
-
+  const deleteProductImages = async (images: string[]) => {
     try {
+      const filesToDelete = images.map(imageUrl => {
+        const urlParts = imageUrl.split('/');
+        return urlParts[urlParts.length - 1];
+      });
+
+      if (filesToDelete.length > 0) {
+        const { error } = await supabase.storage
+          .from('products')
+          .remove(filesToDelete);
+
+        if (error) {
+          console.error('Error deleting images from storage:', error);
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting images:', error);
+    }
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    try {
+      // Get product details to access images
+      const product = products.find(p => p.id === productId);
+      
+      // Delete images from storage first
+      if (product?.images && product.images.length > 0) {
+        await deleteProductImages(product.images);
+      }
+
+      // Delete the product from database
       const { error } = await supabase
         .from('products')
         .delete()
         .eq('id', productId);
 
       if (error) throw error;
+      
+      toast.success('Product and associated images deleted successfully');
       fetchProducts();
     } catch (error) {
       console.error('Error deleting product:', error);
+      toast.error('Failed to delete product');
     }
   };
 
@@ -180,14 +212,34 @@ const AdminProducts = () => {
                   >
                     {product.is_active ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleDeleteProduct(product.id)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Product</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete "{product.name}"? This action cannot be undone and will permanently remove the product and all associated images from the database and storage.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDeleteProduct(product.id)}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          Delete Product
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
             </CardContent>

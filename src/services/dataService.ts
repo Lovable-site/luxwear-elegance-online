@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -78,6 +79,97 @@ export class DataService {
     }
 
     return data;
+  }
+
+  static async deleteProduct(productId: string) {
+    console.log('[DataService] Deleting product:', productId);
+    
+    // Get product details to access images
+    const { data: product, error: fetchError } = await supabase
+      .from('products')
+      .select('images')
+      .eq('id', productId)
+      .single();
+
+    if (fetchError) {
+      console.error('[DataService] Error fetching product for deletion:', fetchError);
+      throw fetchError;
+    }
+
+    // Delete images from storage first
+    if (product?.images && product.images.length > 0) {
+      const filesToDelete = product.images.map((imageUrl: string) => {
+        const urlParts = imageUrl.split('/');
+        return urlParts[urlParts.length - 1];
+      });
+
+      const { error: storageError } = await supabase.storage
+        .from('products')
+        .remove(filesToDelete);
+
+      if (storageError) {
+        console.error('[DataService] Error deleting product images:', storageError);
+        // Continue with product deletion even if image deletion fails
+      }
+    }
+
+    // Delete the product from database
+    const { error } = await supabase
+      .from('products')
+      .delete()
+      .eq('id', productId);
+
+    if (error) {
+      console.error('[DataService] Error deleting product:', error);
+      throw error;
+    }
+
+    return { success: true };
+  }
+
+  // Collection Management
+  static async deleteCollection(categoryId: string) {
+    console.log('[DataService] Deleting collection:', categoryId);
+    
+    // Get category details to access image
+    const { data: category, error: fetchError } = await supabase
+      .from('categories')
+      .select('image_url')
+      .eq('id', categoryId)
+      .single();
+
+    if (fetchError) {
+      console.error('[DataService] Error fetching category for deletion:', fetchError);
+      throw fetchError;
+    }
+
+    // Delete image from storage first if it exists
+    if (category?.image_url) {
+      const urlParts = category.image_url.split('/');
+      const fileName = urlParts[urlParts.length - 1];
+      
+      const { error: storageError } = await supabase.storage
+        .from('products')
+        .remove([fileName]);
+
+      if (storageError) {
+        console.error('[DataService] Error deleting collection image:', storageError);
+        // Continue with category deletion even if image deletion fails
+      }
+    }
+
+    // Delete the category from database
+    const { error } = await supabase
+      .from('categories')
+      .delete()
+      .eq('id', categoryId);
+
+    if (error) {
+      console.error('[DataService] Error deleting category:', error);
+      throw error;
+    }
+
+    return { success: true };
   }
 
   // Order Management (Admin + Client)

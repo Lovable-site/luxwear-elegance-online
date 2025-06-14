@@ -1,10 +1,13 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Plus, Search, Edit, Trash2, Image } from "lucide-react";
+import { toast } from "sonner";
 import CollectionForm from "@/components/admin/CollectionForm";
 
 interface Category {
@@ -43,19 +46,46 @@ const AdminCollections = () => {
     }
   };
 
-  const handleDeleteCategory = async (categoryId: string) => {
-    if (!confirm('Are you sure you want to delete this collection? This will remove it from all associated products.')) return;
-
+  const deleteCollectionImage = async (imageUrl: string) => {
     try {
+      const urlParts = imageUrl.split('/');
+      const fileName = urlParts[urlParts.length - 1];
+      
+      const { error } = await supabase.storage
+        .from('products')
+        .remove([fileName]);
+
+      if (error) {
+        console.error('Error deleting image from storage:', error);
+      }
+    } catch (error) {
+      console.error('Error deleting image:', error);
+    }
+  };
+
+  const handleDeleteCategory = async (categoryId: string) => {
+    try {
+      // Get category details to access image
+      const category = categories.find(c => c.id === categoryId);
+      
+      // Delete image from storage first if it exists
+      if (category?.image_url) {
+        await deleteCollectionImage(category.image_url);
+      }
+
+      // Delete the category from database
       const { error } = await supabase
         .from('categories')
         .delete()
         .eq('id', categoryId);
 
       if (error) throw error;
+      
+      toast.success('Collection and associated image deleted successfully');
       fetchCategories();
     } catch (error) {
       console.error('Error deleting category:', error);
+      toast.error('Failed to delete collection');
     }
   };
 
@@ -146,14 +176,34 @@ const AdminCollections = () => {
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleDeleteCategory(category.id)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Collection</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete "{category.name}"? This action cannot be undone and will permanently remove the collection and its associated image from the database and storage. This will also remove the collection from all associated products.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDeleteCategory(category.id)}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          Delete Collection
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
             </CardContent>
