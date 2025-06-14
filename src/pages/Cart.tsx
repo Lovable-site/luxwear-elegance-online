@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -6,29 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Trash2, Plus, Minus, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
+import { useCart } from "@/context/CartContext";
 
 const Cart = () => {
-  // Mock cart items
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 1,
-      name: "Elegance Silk Dress",
-      price: 299,
-      image: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=200&h=300&fit=crop",
-      size: "M",
-      color: "Black",
-      quantity: 1
-    },
-    {
-      id: 2,
-      name: "Classic Wool Blazer",
-      price: 450,
-      image: "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=200&h=300&fit=crop",
-      size: "L",
-      color: "Navy",
-      quantity: 2
-    }
-  ]);
+  const { cartItems, setCartItems } = useCart();
 
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState("");

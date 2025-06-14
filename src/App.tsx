@@ -23,6 +23,7 @@ import AuthenticatedNavbar from "./components/auth/AuthenticatedNavbar";
 import Footer from "./components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import Checkout from "./pages/Checkout";
+import { CartProvider } from "@/context/CartContext";
 
 const queryClient = new QueryClient();
 
@@ -92,7 +93,9 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <AppContent />
+          <CartProvider>
+            <AppContent />
+          </CartProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

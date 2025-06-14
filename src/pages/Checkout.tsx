@@ -1,12 +1,102 @@
 
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import { ShoppingCart, CreditCard } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useCart } from "@/context/CartContext";
 
-const Checkout = () => {
-  // In a fuller version, fetch cart, summary, and user info here.
-  // For now, show a simple confirmation and a "Pay Now" placeholder.
+type ShippingFields = {
+  fullName: string;
+  address: string;
+  city: string;
+  postalCode: string;
+  country: string;
+};
+
+const initialShipping = { fullName: "", address: "", city: "", postalCode: "", country: "" };
+
+export default function Checkout() {
+  const { cartItems, clearCart, setCartItems } = useCart();
+  const [shipping, setShipping] = useState<ShippingFields>(initialShipping);
+  const [errors, setErrors] = useState<Partial<ShippingFields>>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [orderSuccess, setOrderSuccess] = useState(false);
+
+  const navigate = useNavigate();
+
+  // Price calculations
+  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const discount = subtotal > 500 ? subtotal * 0.1 : 0; // Example: 10% off for >$500
+  const shippingCost = subtotal > 200 ? 0 : 25;
+  const tax = (subtotal - discount) * 0.08;
+  const total = subtotal - discount + shippingCost + tax;
+
+  // On load, redirect if cart is empty
+  useEffect(() => {
+    if (cartItems.length === 0 && !orderSuccess) {
+      navigate("/cart");
+    }
+  }, [cartItems, navigate, orderSuccess]);
+
+  // Validation
+  function validate(data: ShippingFields) {
+    const errs: Partial<ShippingFields> = {};
+    if (!data.fullName.trim()) errs.fullName = "Full name required";
+    if (!data.address.trim()) errs.address = "Address required";
+    if (!data.city.trim()) errs.city = "City required";
+    if (!data.postalCode.trim()) errs.postalCode = "Postal code required";
+    if (!data.country.trim()) errs.country = "Country required";
+    return errs;
+  }
+
+  // Handler
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (submitting) return;
+    const fieldErrors = validate(shipping);
+    setErrors(fieldErrors);
+    if (Object.keys(fieldErrors).length > 0) return;
+
+    setSubmitting(true);
+
+    // Simulate API
+    setTimeout(() => {
+      // Clear cart & show confirmation
+      clearCart();
+      setOrderSuccess(true);
+      toast.success("Order placed! Confirmation sent.");
+      setSubmitting(false);
+      setShipping(initialShipping);
+      // Optionally: navigate("/order-summary") after delay
+    }, 1300);
+  };
+
+  if (orderSuccess) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4">
+        <Card className="w-full max-w-lg">
+          <CardHeader className="flex flex-row items-center gap-4">
+            <ShoppingCart className="h-8 w-8 text-luxury-gold" />
+            <CardTitle>Order Complete</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-5 text-center">
+              <div className="text-2xl font-bold mb-2 text-green-600">Thank you!</div>
+              <div>Your order has been placed successfully.</div>
+            </div>
+            <Link to="/">
+              <Button className="w-full bg-luxury-gold text-black font-semibold mt-2">
+                Back to Home
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4">
@@ -16,37 +106,113 @@ const Checkout = () => {
           <CardTitle>Checkout</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="mb-4">
-            <div className="flex justify-between mb-2">
-              <span className="text-base text-gray-600">Product</span>
-              <span className="text-base font-semibold text-gray-900">Elegance Silk Dress</span>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Cart Summary */}
+            <div>
+              <div className="flex justify-between mb-2">
+                <span className="text-base text-gray-600">Items</span>
+                <span>{cartItems.length}</span>
+              </div>
+              {cartItems.length > 0 && (
+                <div className="mb-2 max-h-32 overflow-y-auto">
+                  {cartItems.map((item) => (
+                    <div key={item.id} className="flex justify-between text-sm text-gray-700">
+                      <div>
+                        {item.name}
+                        {" x"}
+                        {item.quantity}
+                      </div>
+                      <div>${(item.price * item.quantity).toFixed(2)}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex justify-between mb-2">
+                <span className="text-base text-gray-600">Subtotal</span>
+                <span>${subtotal.toFixed(2)}</span>
+              </div>
+              {discount > 0 && (
+                <div className="flex justify-between mb-2 text-green-700">
+                  <span>Discount</span>
+                  <span>-${discount.toFixed(2)}</span>
+                </div>
+              )}
+              <div className="flex justify-between mb-2">
+                <span className="text-base text-gray-600">Shipping</span>
+                <span>{shippingCost === 0 ? "Free" : `$${shippingCost.toFixed(2)}`}</span>
+              </div>
+              <div className="flex justify-between mb-2">
+                <span className="text-base text-gray-600">Tax</span>
+                <span>${tax.toFixed(2)}</span>
+              </div>
+              <hr className="my-2" />
+              <div className="flex justify-between mb-4">
+                <span className="text-base font-semibold">Total</span>
+                <span className="font-bold text-luxury-gold text-lg">${total.toFixed(2)}</span>
+              </div>
             </div>
-            <div className="flex justify-between mb-2">
-              <span className="text-base text-gray-600">Subtotal</span>
-              <span>$749.00</span>
+
+            {/* Shipping Form */}
+            <div className="space-y-2">
+              <Input
+                placeholder="Full Name"
+                value={shipping.fullName}
+                onChange={e => setShipping(v => ({ ...v, fullName: e.target.value }))}
+                disabled={submitting}
+              />
+              {errors.fullName && <div className="text-red-600 text-xs">{errors.fullName}</div>}
+              <Input
+                placeholder="Address"
+                value={shipping.address}
+                onChange={e => setShipping(v => ({ ...v, address: e.target.value }))}
+                disabled={submitting}
+              />
+              {errors.address && <div className="text-red-600 text-xs">{errors.address}</div>}
+              <Input
+                placeholder="City"
+                value={shipping.city}
+                onChange={e => setShipping(v => ({ ...v, city: e.target.value }))}
+                disabled={submitting}
+              />
+              {errors.city && <div className="text-red-600 text-xs">{errors.city}</div>}
+              <Input
+                placeholder="Postal Code"
+                value={shipping.postalCode}
+                onChange={e => setShipping(v => ({ ...v, postalCode: e.target.value }))}
+                disabled={submitting}
+              />
+              {errors.postalCode && <div className="text-red-600 text-xs">{errors.postalCode}</div>}
+              <Input
+                placeholder="Country"
+                value={shipping.country}
+                onChange={e => setShipping(v => ({ ...v, country: e.target.value }))}
+                disabled={submitting}
+              />
+              {errors.country && <div className="text-red-600 text-xs">{errors.country}</div>}
             </div>
-            <div className="flex justify-between mb-2">
-              <span className="text-base text-gray-600">Shipping</span>
-              <span>Free</span>
+
+            {/* Payment - Placeholder */}
+            <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-xs text-yellow-800 mb-2">
+              Payment functionality coming soon. No real card info is collected yet.
             </div>
-            <div className="flex justify-between mb-4">
-              <span className="text-base text-gray-600">Total</span>
-              <span className="font-bold text-luxury-gold text-lg">$749.00</span>
-            </div>
-          </div>
-          <Button className="w-full bg-luxury-gold text-black font-semibold flex gap-2 items-center mb-2" size="lg" disabled>
-            <CreditCard className="h-5 w-5" />
-            Pay Now
-          </Button>
-          <Link to="/cart">
-            <Button variant="outline" className="w-full" size="lg">Back to Cart</Button>
-          </Link>
-          <p className="text-center text-xs text-gray-400 mt-4">* Payment functionality coming soon</p>
+
+            <Button
+              type="submit"
+              className="w-full bg-luxury-gold text-black font-semibold flex gap-2 items-center"
+              size="lg"
+              disabled={submitting}
+            >
+              <CreditCard className="h-5 w-5" />
+              {submitting ? "Placing Order..." : "Place Order"}
+            </Button>
+            <Link to="/cart">
+              <Button variant="outline" className="w-full" size="lg" disabled={submitting}>
+                Back to Cart
+              </Button>
+            </Link>
+          </form>
         </CardContent>
       </Card>
     </div>
   );
-};
-
-export default Checkout;
-
+}
