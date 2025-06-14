@@ -37,10 +37,15 @@ const ProductForm = ({ product, onClose, onSave }: ProductFormProps) => {
     is_active: true,
     images: [] as string[]
   });
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     fetchCategories();
-    if (product) {
+  }, []);
+
+  useEffect(() => {
+    // Only initialize form data once when product prop changes and we haven't initialized yet
+    if (product && !isInitialized) {
       setFormData({
         name: product.name || '',
         description: product.description || '',
@@ -54,8 +59,25 @@ const ProductForm = ({ product, onClose, onSave }: ProductFormProps) => {
         is_active: product.is_active ?? true,
         images: product.images || []
       });
+      setIsInitialized(true);
+    } else if (!product && !isInitialized) {
+      // Reset to default values for new product
+      setFormData({
+        name: '',
+        description: '',
+        price: '',
+        category_id: '',
+        sku: '',
+        stock_quantity: '',
+        sizes: '',
+        tags: '',
+        is_featured: false,
+        is_active: true,
+        images: []
+      });
+      setIsInitialized(true);
     }
-  }, [product]);
+  }, [product, isInitialized]);
 
   const fetchCategories = async () => {
     try {
