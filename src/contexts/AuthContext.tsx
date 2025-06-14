@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,51 +36,52 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
 
+  /**
+   * Fetches the user's role from the 'profiles' table by user ID.
+   * Sets the role (or 'customer' fallback) and outputs detailed logs.
+   */
   const fetchUserRole = async (userId: string) => {
     try {
-      console.log('Fetching user role for:', userId);
+      console.info('[Auth] Fetching user role for:', userId);
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('role, email')
         .eq('id', userId)
-        .single();
-      
-      if (error) {
-        console.error('Error fetching user role:', error);
+        .maybeSingle();
+
+      if (error || !profile?.role) {
+        console.error('[Auth] Error or empty role in user profile:', error, profile);
         setUserRole('customer');
         return;
       }
-      
-      console.log('User profile fetched:', profile);
-      setUserRole(profile?.role || 'customer');
+
+      console.log('[Auth] User profile fetched, role:', profile.role);
+      setUserRole(profile.role);
     } catch (error) {
-      console.error('Error in fetchUserRole:', error);
+      console.error('[Auth] Exception in fetchUserRole:', error);
       setUserRole('customer');
     }
   };
 
+  /**
+   * Triggers refetching of the user's role, if the user is available.
+   */
   const refreshUserRole = async () => {
-    if (user?.id) {
-      await fetchUserRole(user.id);
-    }
+    if (user?.id) await fetchUserRole(user.id);
   };
 
   useEffect(() => {
-    console.log('Setting up auth state listener');
-    
-    // Set up auth state listener
+    console.info('[AuthProvider] Setting up auth state listener');
+
+    // Set up onAuthStateChange FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email);
+      (event, session) => {
+        console.info('[AuthProvider] Auth state changed:', event, session?.user?.email || '-');
         setSession(session);
         setUser(session?.user ?? null);
-        
         if (session?.user) {
-          // Use setTimeout to avoid potential deadlocks
-          setTimeout(async () => {
-            await fetchUserRole(session.user.id);
-            setLoading(false);
-          }, 100);
+          // Avoid deadlock, defer call to fetchUserRole
+          setTimeout(() => fetchUserRole(session.user.id), 0);
         } else {
           setUserRole(null);
           setLoading(false);
@@ -89,77 +89,70 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     );
 
-    // Check for existing session
+    // THEN check initial session
     const getInitialSession = async () => {
       try {
-        console.log('Getting initial session');
+        console.info('[AuthProvider] Getting initial session');
         const { data: { session }, error } = await supabase.auth.getSession();
-        
         if (error) {
-          console.error('Error getting session:', error);
+          console.error('[AuthProvider] Error getting session:', error);
           setLoading(false);
           return;
         }
-        
-        console.log('Initial session:', session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          await fetchUserRole(session.user.id);
-        }
+        if (session?.user) await fetchUserRole(session.user.id);
         setLoading(false);
       } catch (error) {
-        console.error('Error getting session:', error);
+        console.error('[AuthProvider] Error initializing session:', error);
         setLoading(false);
       }
     };
-
     getInitialSession();
 
     return () => {
-      console.log('Cleaning up auth subscription');
+      console.info('[AuthProvider] Cleaning up auth subscription');
       subscription.unsubscribe();
     };
   }, []);
 
+  /**
+   * Signs user in, then refreshes their role.
+   */
   const signIn = async (email: string, password: string) => {
-    console.log('Signing in user:', email);
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    
+    console.info('[AuthProvider] Signing in user:', email);
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (!error && data.user) {
-      // Refresh user role after successful sign in
-      setTimeout(() => {
-        fetchUserRole(data.user.id);
-      }, 500);
+      setTimeout(() => fetchUserRole(data.user.id), 250); // Immediate refresh post-login
     }
-    
     return { error };
   };
 
+  /**
+   * Signs up new user, passing their full name to Supabase, with redirect.
+   */
   const signUp = async (email: string, password: string, fullName: string) => {
     const redirectUrl = `${window.location.origin}/`;
-    
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: redirectUrl,
-        data: {
-          full_name: fullName,
-        }
+        data: { full_name: fullName },
       }
     });
     return { error };
   };
 
+  /**
+   * Signs out user and clears their role.
+   */
   const signOut = async () => {
-    console.log('Signing out user');
+    console.info('[AuthProvider] Signing out user');
     await supabase.auth.signOut();
     setUserRole(null);
+    setUser(null);
+    setSession(null);
   };
 
   const value = {
@@ -173,11 +166,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     refreshUserRole,
   };
 
-  console.log('Auth context state:', { 
-    user: user?.email, 
-    userRole, 
-    loading 
-  });
+  console.log('[AuthProvider] Auth context state:', { user: user?.email, userRole, loading });
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
