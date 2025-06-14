@@ -22,6 +22,31 @@ const DEFAULT_SYSTEM_SETTINGS = {
   },
 };
 
+// Type for enforced settings
+type SystemSettingsType = typeof DEFAULT_SYSTEM_SETTINGS;
+
+// Utility type guard to validate the correct shape
+function isSystemSettings(obj: any): obj is SystemSettingsType {
+  if (
+    typeof obj === "object" &&
+    obj !== null &&
+    "email_notifications" in obj &&
+    "security" in obj &&
+    typeof obj.email_notifications === "object" &&
+    obj.email_notifications !== null &&
+    typeof obj.email_notifications.order === "boolean" &&
+    typeof obj.email_notifications.low_stock === "boolean" &&
+    typeof obj.email_notifications.daily_reports === "boolean" &&
+    typeof obj.security === "object" &&
+    obj.security !== null &&
+    typeof obj.security["2fa"] === "boolean" &&
+    typeof obj.security.login_notifications === "boolean"
+  ) {
+    return true;
+  }
+  return false;
+}
+
 const AdminSettings = () => {
   const [storeSettings, setStoreSettings] = useState({
     storeName: "",
@@ -38,7 +63,7 @@ const AdminSettings = () => {
     expressShippingRate: ""
   });
 
-  const [systemSettings, setSystemSettings] = useState(DEFAULT_SYSTEM_SETTINGS);
+  const [systemSettings, setSystemSettings] = useState<SystemSettingsType>(DEFAULT_SYSTEM_SETTINGS);
   const [loading, setLoading] = useState(true);
 
   // Fetch settings on mount
@@ -69,7 +94,11 @@ const AdminSettings = () => {
           standardShippingRate: data.standard_shipping_rate !== null && data.standard_shipping_rate !== undefined ? String(data.standard_shipping_rate) : "",
           expressShippingRate: data.express_shipping_rate !== null && data.express_shipping_rate !== undefined ? String(data.express_shipping_rate) : ""
         });
-        setSystemSettings(data.system_settings || DEFAULT_SYSTEM_SETTINGS);
+        if (isSystemSettings(data.system_settings)) {
+          setSystemSettings(data.system_settings);
+        } else {
+          setSystemSettings(DEFAULT_SYSTEM_SETTINGS);
+        }
       }
       setLoading(false);
     };
