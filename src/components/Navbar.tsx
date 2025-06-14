@@ -36,6 +36,12 @@ const Navbar = () => {
                 to="/products" 
                 className="text-gray-800 hover:text-luxury-gold transition-colors duration-200"
               >
+                Products
+              </Link>
+              <Link 
+                to="/products" 
+                className="text-gray-800 hover:text-luxury-gold transition-colors duration-200"
+              >
                 Category
               </Link>
               <Link 
@@ -92,6 +98,13 @@ const Navbar = () => {
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Home
+                </Link>
+                <Link 
+                  to="/products" 
+                  className="text-gray-800 hover:text-luxury-gold transition-colors duration-200"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Products
                 </Link>
                 <Link 
                   to="/products" 

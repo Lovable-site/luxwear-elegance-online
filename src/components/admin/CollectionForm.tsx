@@ -54,8 +54,20 @@ const CollectionForm = ({ category, onClose, onSave }: CollectionFormProps) => {
   const uploadImage = async (file: File) => {
     if (!file) return null;
 
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select a valid image file');
+      return null;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size must be less than 5MB');
+      return null;
+    }
+
     const fileExt = file.name.split('.').pop();
-    const fileName = `collection-${Math.random()}.${fileExt}`;
+    const fileName = `collection-${Date.now()}-${Math.random()}.${fileExt}`;
     const filePath = `${fileName}`;
 
     const { error } = await supabase.storage
@@ -215,6 +227,9 @@ const CollectionForm = ({ category, onClose, onSave }: CollectionFormProps) => {
                   <Upload className="h-4 w-4 mr-2" />
                   {uploading ? 'Uploading...' : 'Upload Collection Image'}
                 </Button>
+                <p className="text-xs text-gray-500 mt-1">
+                  Accepts: JPG, PNG, GIF. Max size: 5MB
+                </p>
               </div>
             )}
 

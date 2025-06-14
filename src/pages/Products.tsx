@@ -17,6 +17,14 @@ interface Product {
   categories: { name: string } | null;
 }
 
+interface Category {
+  id: string;
+  name: string;
+  description: string | null;
+  image_url: string | null;
+  is_curated: boolean;
+}
+
 const Products = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
@@ -24,7 +32,7 @@ const Products = () => {
   const [sortBy, setSortBy] = useState("featured");
   const [priceRange, setPriceRange] = useState("all");
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<{id: string, name: string}[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -60,7 +68,7 @@ const Products = () => {
     try {
       const { data, error } = await supabase
         .from('categories')
-        .select('id, name')
+        .select('id, name, description, image_url, is_curated')
         .order('name');
 
       if (error) throw error;
@@ -143,6 +151,53 @@ const Products = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Categories Grid */}
+        {categories.length > 0 && (
+          <div className="mb-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Shop by Category</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {categories.map((category) => (
+                <div
+                  key={category.id}
+                  className="group cursor-pointer bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300"
+                  onClick={() => handleCategoryChange(category.id)}
+                >
+                  <div className="aspect-video overflow-hidden rounded-t-lg">
+                    {category.image_url ? (
+                      <img
+                        src={category.image_url}
+                        alt={category.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                        <span className="text-gray-400 text-4xl font-bold">
+                          {category.name.charAt(0)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-semibold text-lg text-gray-900 group-hover:text-luxury-gold transition-colors">
+                      {category.name}
+                    </h3>
+                    {category.description && (
+                      <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                        {category.description}
+                      </p>
+                    )}
+                    {category.is_curated && (
+                      <span className="inline-block mt-2 px-2 py-1 bg-luxury-gold text-black text-xs font-semibold rounded">
+                        Curated
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Filters and Search */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

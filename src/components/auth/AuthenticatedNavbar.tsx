@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
-import { LogOut, Shield, Store, Heart, ShoppingBag, User, Menu, X } from "lucide-react";
+import { LogOut, Shield, ShoppingBag, Menu, X } from "lucide-react";
 
 const AuthenticatedNavbar = () => {
   const { user, userRole, signOut, refreshUserRole } = useAuth();
@@ -51,6 +52,12 @@ const AuthenticatedNavbar = () => {
               to="/products" 
               className="text-gray-800 hover:text-luxury-gold transition-colors duration-200"
             >
+              Products
+            </Link>
+            <Link 
+              to="/products" 
+              className="text-gray-800 hover:text-luxury-gold transition-colors duration-200"
+            >
               Category
             </Link>
             <Link 
@@ -80,10 +87,6 @@ const AuthenticatedNavbar = () => {
                 </Link>
               </>
             )}
-
-            {/* User button removed for authenticated users */}
-
-            {/* Wishlist button removed */}
 
             <Link to="/cart">
               <Button variant="ghost" size="icon" className="relative">
@@ -138,6 +141,13 @@ const AuthenticatedNavbar = () => {
                 className="text-gray-800 hover:text-luxury-gold transition-colors duration-200"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
+                Products
+              </Link>
+              <Link 
+                to="/products" 
+                className="text-gray-800 hover:text-luxury-gold transition-colors duration-200"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
                 Category
               </Link>
               <Link 
@@ -168,9 +178,6 @@ const AuthenticatedNavbar = () => {
                 )}
 
                 <div className="flex items-center space-x-4">
-                  {/* User button removed for authenticated users */}
-                  {/* Wishlist button removed */}
-
                   <Link to="/cart" onClick={() => setIsMobileMenuOpen(false)}>
                     <Button variant="ghost" size="icon" className="relative">
                       <ShoppingBag className="h-5 w-5" />

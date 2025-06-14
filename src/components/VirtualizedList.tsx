@@ -6,7 +6,7 @@ interface VirtualizedListProps<T> {
   items: T[];
   itemHeight: number;
   height: number;
-  width?: number;
+  width?: number | string;
   renderItem: ({ index, style, data }: { index: number; style: React.CSSProperties; data: T[] }) => React.ReactNode;
   className?: string;
 }
