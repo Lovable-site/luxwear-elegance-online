@@ -234,9 +234,12 @@ const Cart = () => {
 
               <Button
                 size="lg"
+                asChild
                 className="w-full mt-6 bg-luxury-gold text-black hover:bg-yellow-400 font-semibold"
               >
-                Proceed to Checkout
+                <Link to="/checkout">
+                  Go to Checkout
+                </Link>
               </Button>
 
               <Link to="/products">

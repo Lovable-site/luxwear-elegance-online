@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -23,6 +22,7 @@ import Navbar from "./components/Navbar";
 import AuthenticatedNavbar from "./components/auth/AuthenticatedNavbar";
 import Footer from "./components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
+import Checkout from "./pages/Checkout";
 
 const queryClient = new QueryClient();
 
@@ -65,6 +65,11 @@ const AppContent = () => {
                 <Route path="/cart" element={
                   <ProtectedRoute>
                     <Cart />
+                  </ProtectedRoute>
+                } />
+                <Route path="/checkout" element={
+                  <ProtectedRoute>
+                    <Checkout />
                   </ProtectedRoute>
                 } />
                 <Route path="/login" element={<Login />} />
