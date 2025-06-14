@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -8,12 +7,33 @@ import { Trash2, Plus, Minus, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import { useCart } from "@/context/CartContext";
 import { useCartPersistence } from "@/hooks/useCartPersistence";
+import { supabase } from "@/lib/supabase";
 
 const Cart = () => {
   const { cartItems, updateQuantity, removeFromCart } = useCart();
   const { syncCartToDatabase } = useCartPersistence();
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState("");
+  const [taxRate, setTaxRate] = useState<number>(0.08); // default fallback 8%
+
+  // Get tax rate from admin settings on mount
+  useEffect(() => {
+    async function fetchAdminTaxRate() {
+      try {
+        const { data, error } = await supabase
+          .from('store_settings')
+          .select('tax_rate')
+          .limit(1)
+          .maybeSingle();
+        if (!error && data?.tax_rate != null) {
+          setTaxRate(Number(data.tax_rate) / 100); // divides by 100 (e.g., 8.5% => 0.085)
+        }
+      } catch (e) {
+        // ignore, fallback to default
+      }
+    }
+    fetchAdminTaxRate();
+  }, []);
 
   // Sync cart changes to database
   useEffect(() => {
@@ -44,7 +64,7 @@ const Cart = () => {
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const discount = appliedPromo === "LUXURY10" ? subtotal * 0.1 : 0;
   const shipping = subtotal > 200 ? 0 : 25;
-  const tax = (subtotal - discount) * 0.08;
+  const tax = (subtotal - discount) * taxRate;
   const total = subtotal - discount + shipping + tax;
 
   if (cartItems.length === 0) {
@@ -196,7 +216,7 @@ const Cart = () => {
                 </div>
                 
                 <div className="flex justify-between text-gray-600">
-                  <span>Tax</span>
+                  <span>Tax {`(${(taxRate * 100).toFixed(2)}%)`}</span>
                   <span>${tax.toFixed(2)}</span>
                 </div>
                 

@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,14 +25,33 @@ export default function Checkout() {
   const [errors, setErrors] = useState<Partial<ShippingFields>>({});
   const [submitting, setSubmitting] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
+  const [taxRate, setTaxRate] = useState<number>(0.08); // default fallback 8%
 
   const navigate = useNavigate();
 
-  // Price calculations
+  useEffect(() => {
+    async function fetchAdminTaxRate() {
+      try {
+        const { data, error } = await supabase
+          .from('store_settings')
+          .select('tax_rate')
+          .limit(1)
+          .maybeSingle();
+        if (!error && data?.tax_rate != null) {
+          setTaxRate(Number(data.tax_rate) / 100);
+        }
+      } catch (e) {
+        // ignore, fallback to default
+      }
+    }
+    fetchAdminTaxRate();
+  }, []);
+
+  // Price calculations (now using dynamic tax rate)
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const discount = subtotal > 500 ? subtotal * 0.1 : 0;
   const shippingCost = subtotal > 200 ? 0 : 25;
-  const tax = (subtotal - discount) * 0.08;
+  const tax = (subtotal - discount) * taxRate;
   const total = subtotal - discount + shippingCost + tax;
 
   // On load, redirect if cart is empty
@@ -154,7 +172,7 @@ export default function Checkout() {
                 <span>{shippingCost === 0 ? "Free" : `$${shippingCost.toFixed(2)}`}</span>
               </div>
               <div className="flex justify-between mb-2">
-                <span className="text-base text-gray-600">Tax</span>
+                <span className="text-base text-gray-600">Tax {`(${(taxRate * 100).toFixed(2)}%)`}</span>
                 <span>${tax.toFixed(2)}</span>
               </div>
               <hr className="my-2" />
