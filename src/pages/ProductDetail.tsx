@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -308,10 +307,8 @@ const ProductDetail = () => {
         {/* Product Details Tabs */}
         <div className="mt-16">
           <Tabs defaultValue="details" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-1">
               <TabsTrigger value="details">Details</TabsTrigger>
-              <TabsTrigger value="sizing">Size Guide</TabsTrigger>
-              <TabsTrigger value="shipping">Shipping</TabsTrigger>
             </TabsList>
             
             <TabsContent value="details" className="mt-6">
@@ -321,30 +318,6 @@ const ProductDetail = () => {
                 </p>
                 <h4 className="text-lg font-semibold mb-2">Care Instructions</h4>
                 <p className="text-gray-600">Dry clean only. Store in garment bag.</p>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="sizing" className="mt-6">
-              <div className="prose max-w-none">
-                <p className="text-gray-600 mb-4">True to size. Please refer to our size guide for the best fit.</p>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-semibold mb-2">Size Chart</h4>
-                  <p className="text-sm text-gray-600">
-                    Please refer to our detailed size guide for the best fit. 
-                    If you're between sizes, we recommend sizing up.
-                  </p>
-                </div>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="shipping" className="mt-6">
-              <div className="prose max-w-none">
-                <p className="text-gray-600">Free shipping on orders over $200. Express delivery available.</p>
-                <div className="mt-4 space-y-2">
-                  <p className="text-sm"><strong>Standard Delivery:</strong> 3-5 business days</p>
-                  <p className="text-sm"><strong>Express Delivery:</strong> 1-2 business days</p>
-                  <p className="text-sm"><strong>International:</strong> 7-14 business days</p>
-                </div>
               </div>
             </TabsContent>
           </Tabs>
