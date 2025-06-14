@@ -1,12 +1,15 @@
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingBag, User, Menu, X } from "lucide-react";
+import { useCart } from "@/context/CartContext";
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const cartItems = 0; // This will be managed by cart context later
+  const { cartItems } = useCart();
+  const cartItemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const wishlistItems = 0; // This will be managed by wishlist context later
 
   return (
@@ -60,9 +63,9 @@ const Navbar = () => {
             <Link to="/cart">
               <Button variant="ghost" size="icon" className="relative">
                 <ShoppingBag className="h-5 w-5" />
-                {cartItems > 0 && (
+                {cartItemCount > 0 && (
                   <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 bg-luxury-gold text-black text-xs flex items-center justify-center">
-                    {cartItems}
+                    {cartItemCount}
                   </Badge>
                 )}
               </Button>
@@ -129,9 +132,9 @@ const Navbar = () => {
                 <Link to="/cart" onClick={() => setIsMobileMenuOpen(false)}>
                   <Button variant="ghost" size="icon" className="relative">
                     <ShoppingBag className="h-5 w-5" />
-                    {cartItems > 0 && (
+                    {cartItemCount > 0 && (
                       <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 bg-luxury-gold text-black text-xs flex items-center justify-center">
-                        {cartItems}
+                        {cartItemCount}
                       </Badge>
                     )}
                   </Button>
