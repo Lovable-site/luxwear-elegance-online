@@ -36,6 +36,7 @@ const OptimizedProductCard: React.FC<OptimizedProductCardProps> = ({ product }) 
       price: product.price,
       image: product.images[0] || '',
       size: 'M', // Add default size
+      color: 'Default', // Add default color
       quantity: 1,
     });
   };
