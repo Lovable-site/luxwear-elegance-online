@@ -19,7 +19,7 @@ export const useCartPersistence = () => {
 
   // Sync cart to database when cart changes (for logged-in users)
   useEffect(() => {
-    if (user && cartItems.length >= 0) { // Changed condition to sync even empty carts
+    if (user && cartItems.length >= 0) {
       console.log('[CartPersistence] Syncing cart to database, items:', cartItems.length);
       syncCartToDatabase();
     }
@@ -51,7 +51,7 @@ export const useCartPersistence = () => {
       console.log('[CartPersistence] Raw cart data from database:', cartData);
 
       const cartItems = cartData?.map(item => ({
-        id: item.product_id, // Keep as string UUID
+        id: String(item.product_id), // Convert to string for consistency
         name: item.products?.name || 'Unknown Product',
         price: Number(item.products?.price) || 0,
         image: item.products?.images?.[0] || '/placeholder.svg',
@@ -89,7 +89,7 @@ export const useCartPersistence = () => {
       if (cartItems.length > 0) {
         const cartData = cartItems.map(item => ({
           user_id: user.id,
-          product_id: item.id, // This should be a UUID string
+          product_id: String(item.id), // Ensure it's a string
           quantity: item.quantity,
           size: item.size || null
         }));
@@ -151,7 +151,7 @@ export const useCartPersistence = () => {
       // Create order items
       const orderItems = cartItems.map(item => ({
         order_id: order.id,
-        product_id: item.id, // UUID string
+        product_id: String(item.id), // Ensure it's a string
         quantity: item.quantity,
         price: item.price,
         size: item.size || null

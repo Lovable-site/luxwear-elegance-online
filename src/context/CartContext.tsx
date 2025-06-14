@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 
 type CartItem = {
-  id: string | number; // Allow both string (UUID) and number for flexibility
+  id: string; // Changed to always be string for consistency
   name: string;
   price: number;
   image: string;
@@ -16,8 +16,8 @@ type CartContextType = {
   setCartItems: React.Dispatch<React.SetStateAction<CartItem[]>>;
   clearCart: () => void;
   addToCart: (item: CartItem) => void;
-  updateQuantity: (id: string | number, size: string, quantity: number) => void;
-  removeFromCart: (id: string | number, size: string) => void;
+  updateQuantity: (id: string, size: string, quantity: number) => void;
+  removeFromCart: (id: string, size: string) => void;
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -51,7 +51,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     console.log('[CartContext] Adding item to cart:', item);
     setCartItems(prevItems => {
       const existingItemIndex = prevItems.findIndex(
-        cartItem => String(cartItem.id) === String(item.id) && cartItem.size === item.size
+        cartItem => cartItem.id === item.id && cartItem.size === item.size
       );
 
       if (existingItemIndex >= 0) {
@@ -66,7 +66,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  const updateQuantity = (id: string | number, size: string, quantity: number) => {
+  const updateQuantity = (id: string, size: string, quantity: number) => {
     console.log('[CartContext] Updating quantity for item:', id, size, quantity);
     if (quantity <= 0) {
       removeFromCart(id, size);
@@ -75,17 +75,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     setCartItems(prevItems =>
       prevItems.map(item =>
-        String(item.id) === String(id) && item.size === size 
+        item.id === id && item.size === size 
           ? { ...item, quantity } 
           : item
       )
     );
   };
 
-  const removeFromCart = (id: string | number, size: string) => {
+  const removeFromCart = (id: string, size: string) => {
     console.log('[CartContext] Removing item from cart:', id, size);
     setCartItems(prevItems => 
-      prevItems.filter(item => !(String(item.id) === String(id) && item.size === size))
+      prevItems.filter(item => !(item.id === id && item.size === size))
     );
   };
 

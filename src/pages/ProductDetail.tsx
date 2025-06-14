@@ -4,20 +4,21 @@ import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, ShoppingBag, Share2, Shield, Truck, RotateCcw } from "lucide-react";
+import { ShoppingBag, Share2, Shield, Truck, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
+import { useCart } from "@/context/CartContext";
 
 const ProductDetail = () => {
   const { id } = useParams();
+  const { addToCart } = useCart();
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
   const [quantity, setQuantity] = useState(1);
-  const [isWishlisted, setIsWishlisted] = useState(false);
   const [mainImage, setMainImage] = useState(0);
 
   // Mock product data
   const product = {
-    id: parseInt(id || "1"),
+    id: id || "1",
     name: "Elegance Silk Dress",
     price: 299,
     originalPrice: 399,
@@ -56,12 +57,19 @@ const ProductDetail = () => {
       toast.error("Please select a color");
       return;
     }
-    toast.success(`Added ${product.name} to cart`);
-  };
 
-  const handleWishlist = () => {
-    setIsWishlisted(!isWishlisted);
-    toast.success(isWishlisted ? "Removed from wishlist" : "Added to wishlist");
+    const cartItem = {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.images[0],
+      size: selectedSize,
+      color: selectedColor,
+      quantity: quantity
+    };
+
+    addToCart(cartItem);
+    toast.success(`Added ${product.name} to cart`);
   };
 
   const discountPercentage = Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100);
@@ -205,28 +213,10 @@ const ProductDetail = () => {
                 Add to Cart - ${product.price * quantity}
               </Button>
               
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  onClick={handleWishlist}
-                  variant="outline"
-                  size="lg"
-                  className={`${
-                    isWishlisted ? "border-red-500 text-red-500" : "border-gray-300"
-                  }`}
-                >
-                  <Heart
-                    className={`h-5 w-5 mr-2 ${
-                      isWishlisted ? "fill-red-500" : ""
-                    }`}
-                  />
-                  Wishlist
-                </Button>
-                
-                <Button variant="outline" size="lg">
-                  <Share2 className="h-5 w-5 mr-2" />
-                  Share
-                </Button>
-              </div>
+              <Button variant="outline" size="lg" className="w-full">
+                <Share2 className="h-5 w-5 mr-2" />
+                Share
+              </Button>
             </div>
 
             {/* Features */}

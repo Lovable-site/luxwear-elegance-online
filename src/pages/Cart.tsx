@@ -20,14 +20,14 @@ const Cart = () => {
     syncCartToDatabase();
   }, [cartItems]);
 
-  const handleUpdateQuantity = (id: number, size: string, newQuantity: number) => {
+  const handleUpdateQuantity = (id: string, size: string, newQuantity: number) => {
     updateQuantity(id, size, newQuantity);
     if (newQuantity <= 0) {
       toast.success("Item removed from cart");
     }
   };
 
-  const handleRemoveItem = (id: number, size: string) => {
+  const handleRemoveItem = (id: string, size: string) => {
     removeFromCart(id, size);
     toast.success("Item removed from cart");
   };
