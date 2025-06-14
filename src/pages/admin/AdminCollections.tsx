@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -32,7 +31,7 @@ const AdminCollections = () => {
     try {
       const { data, error } = await supabase
         .from('categories')
-        .select('*')
+        .select('id, name, description, is_curated, image_url, created_at')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
