@@ -1,11 +1,21 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import ProductCard from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Filter, Search } from "lucide-react";
+import { toast } from "sonner";
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  images: string[];
+  categories: { name: string } | null;
+}
 
 const Products = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -13,71 +23,62 @@ const Products = () => {
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get("category") || "all");
   const [sortBy, setSortBy] = useState("featured");
   const [priceRange, setPriceRange] = useState("all");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<{id: string, name: string}[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock products data
-  const allProducts = [
-    {
-      id: "6c424fe9-978b-4755-a29a-2a2258b00001",
-      name: "Elegance Silk Dress",
-      price: 299,
-      image: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=600&fit=crop",
-      category: "women"
-    },
-    {
-      id: "6c424fe9-978b-4755-a29a-2a2258b00002",
-      name: "Classic Wool Blazer",
-      price: 450,
-      image: "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=400&h=600&fit=crop",
-      category: "men"
-    },
-    {
-      id: "6c424fe9-978b-4755-a29a-2a2258b00003",
-      name: "Premium Leather Handbag",
-      price: 189,
-      image: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=400&h=600&fit=crop",
-      category: "accessories"
-    },
-    {
-      id: "6c424fe9-978b-4755-a29a-2a2258b00004",
-      name: "Cashmere Sweater",
-      price: 320,
-      image: "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=400&h=600&fit=crop",
-      category: "women"
-    },
-    {
-      id: "6c424fe9-978b-4755-a29a-2a2258b00005",
-      name: "Luxury Watch",
-      price: 1200,
-      image: "https://images.unsplash.com/photo-1523170335258-f5c6c6bd6edb?w=400&h=600&fit=crop",
-      category: "accessories"
-    },
-    {
-      id: "6c424fe9-978b-4755-a29a-2a2258b00006",
-      name: "Designer Suit",
-      price: 890,
-      image: "https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?w=400&h=600&fit=crop",
-      category: "men"
-    },
-    {
-      id: "6c424fe9-978b-4755-a29a-2a2258b00007",
-      name: "Evening Gown",
-      price: 650,
-      image: "https://images.unsplash.com/photo-1566479179817-66c1fd875aa0?w=400&h=600&fit=crop",
-      category: "women"
-    },
-    {
-      id: "6c424fe9-978b-4755-a29a-2a2258b00008",
-      name: "Italian Leather Shoes",
-      price: 420,
-      image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=600&fit=crop",
-      category: "men"
+  useEffect(() => {
+    fetchProducts();
+    fetchCategories();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
+          id,
+          name,
+          price,
+          images,
+          categories (name)
+        `)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setProducts(data || []);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      toast.error('Failed to load products');
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('id, name')
+        .order('name');
+
+      if (error) throw error;
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
 
   // Filter products based on search and filters
-  const filteredProducts = allProducts.filter(product => {
+  const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
+    
+    let matchesCategory = true;
+    if (selectedCategory !== "all") {
+      const categoryName = categories.find(cat => cat.id === selectedCategory)?.name;
+      matchesCategory = product.categories?.name === categoryName;
+    }
     
     let matchesPrice = true;
     if (priceRange === "under-200") matchesPrice = product.price < 200;
@@ -119,6 +120,14 @@ const Products = () => {
     setSearchParams(searchParams);
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-luxury-gold"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
@@ -156,9 +165,11 @@ const Products = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="women">Women</SelectItem>
-                <SelectItem value="men">Men</SelectItem>
-                <SelectItem value="accessories">Accessories</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
@@ -194,7 +205,7 @@ const Products = () => {
         {/* Results Summary */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-gray-600">
-            Showing {sortedProducts.length} of {allProducts.length} products
+            Showing {sortedProducts.length} of {products.length} products
           </p>
           <Button variant="outline" size="sm">
             <Filter className="h-4 w-4 mr-2" />
@@ -206,7 +217,16 @@ const Products = () => {
         {sortedProducts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {sortedProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
+              <ProductCard 
+                key={product.id} 
+                product={{
+                  id: product.id,
+                  name: product.name,
+                  price: product.price,
+                  image: product.images[0] || '/placeholder.svg',
+                  category: product.categories?.name || 'Uncategorized'
+                }} 
+              />
             ))}
           </div>
         ) : (
@@ -229,7 +249,7 @@ const Products = () => {
         )}
 
         {/* Load More Button */}
-        {sortedProducts.length > 0 && (
+        {sortedProducts.length > 0 && sortedProducts.length < products.length && (
           <div className="text-center mt-12">
             <Button 
               variant="outline" 

@@ -1,6 +1,7 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,48 +9,74 @@ import { ShoppingBag, Share2, Shield, Truck, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { useCart } from "@/context/CartContext";
 
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  images: string[];
+  sizes: string[];
+  tags: string[];
+  stock_quantity: number;
+  categories: { name: string } | null;
+}
+
 const ProductDetail = () => {
   const { id } = useParams();
   const { addToCart } = useCart();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [mainImage, setMainImage] = useState(0);
 
-  // Mock product data
-  const product = {
-    id: id || "1",
-    name: "Elegance Silk Dress",
-    price: 299,
-    originalPrice: 399,
-    description: "Exquisite silk dress crafted with meticulous attention to detail. This timeless piece embodies elegance and sophistication, perfect for special occasions or elevated everyday wear.",
-    images: [
-      "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=600&h=800&fit=crop",
-      "https://images.unsplash.com/photo-1566479179817-66c1fd875aa0?w=600&h=800&fit=crop",
-      "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=600&h=800&fit=crop",
-      "https://images.unsplash.com/photo-1551803091-e20673f15561?w=600&h=800&fit=crop"
-    ],
-    category: "women",
-    sizes: ["XS", "S", "M", "L", "XL"],
-    colors: [
-      { name: "Black", value: "#000000" },
-      { name: "Navy", value: "#1e3a8a" },
-      { name: "Burgundy", value: "#7c2d12" }
-    ],
-    inStock: true,
-    features: [
-      "100% Pure Silk",
-      "Hand-finished seams",
-      "Italian craftsmanship",
-      "Sustainable production"
-    ],
-    care: "Dry clean only. Store in garment bag.",
-    sizing: "True to size. Model is 5'9\" wearing size S.",
-    shipping: "Free shipping on orders over $200. Express delivery available."
+  // Default colors (since we don't have colors in the database yet)
+  const defaultColors = [
+    { name: "Black", value: "#000000" },
+    { name: "Navy", value: "#1e3a8a" },
+    { name: "Burgundy", value: "#7c2d12" }
+  ];
+
+  useEffect(() => {
+    if (id) {
+      fetchProduct(id);
+    }
+  }, [id]);
+
+  const fetchProduct = async (productId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
+          id,
+          name,
+          description,
+          price,
+          images,
+          sizes,
+          tags,
+          stock_quantity,
+          categories (name)
+        `)
+        .eq('id', productId)
+        .eq('is_active', true)
+        .single();
+
+      if (error) throw error;
+      setProduct(data);
+    } catch (error) {
+      console.error('Error fetching product:', error);
+      toast.error('Product not found');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAddToCart = () => {
-    if (!selectedSize) {
+    if (!product) return;
+
+    if (product.sizes.length > 0 && !selectedSize) {
       toast.error("Please select a size");
       return;
     }
@@ -62,8 +89,8 @@ const ProductDetail = () => {
       id: product.id,
       name: product.name,
       price: product.price,
-      image: product.images[0],
-      size: selectedSize,
+      image: product.images[0] || '/placeholder.svg',
+      size: selectedSize || "One Size",
       color: selectedColor,
       quantity: quantity
     };
@@ -72,7 +99,24 @@ const ProductDetail = () => {
     toast.success(`Added ${product.name} to cart`);
   };
 
-  const discountPercentage = Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100);
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-luxury-gold"></div>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Product Not Found</h1>
+          <p className="text-gray-600">The product you're looking for doesn't exist or has been removed.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -83,37 +127,39 @@ const ProductDetail = () => {
             {/* Main Image */}
             <div className="aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden">
               <img
-                src={product.images[mainImage]}
+                src={product.images[mainImage] || '/placeholder.svg'}
                 alt={product.name}
                 className="w-full h-full object-cover"
               />
             </div>
             
             {/* Thumbnail Images */}
-            <div className="grid grid-cols-4 gap-2">
-              {product.images.map((image, index) => (
-                <button
-                  key={index}
-                  onClick={() => setMainImage(index)}
-                  className={`aspect-square bg-gray-100 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
-                    mainImage === index ? "border-luxury-gold" : "border-transparent"
-                  }`}
-                >
-                  <img
-                    src={image}
-                    alt={`${product.name} view ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </button>
-              ))}
-            </div>
+            {product.images.length > 1 && (
+              <div className="grid grid-cols-4 gap-2">
+                {product.images.map((image, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setMainImage(index)}
+                    className={`aspect-square bg-gray-100 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
+                      mainImage === index ? "border-luxury-gold" : "border-transparent"
+                    }`}
+                  >
+                    <img
+                      src={image}
+                      alt={`${product.name} view ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Product Info */}
           <div className="space-y-6">
             <div>
               <Badge variant="secondary" className="mb-2 capitalize">
-                {product.category}
+                {product.categories?.name || 'Uncategorized'}
               </Badge>
               <h1 className="text-3xl md:text-4xl font-heading font-bold text-gray-900 mb-2">
                 {product.name}
@@ -122,48 +168,40 @@ const ProductDetail = () => {
                 <span className="text-3xl font-bold text-luxury-gold">
                   ${product.price}
                 </span>
-                {product.originalPrice > product.price && (
-                  <>
-                    <span className="text-xl text-gray-500 line-through">
-                      ${product.originalPrice}
-                    </span>
-                    <Badge variant="destructive">
-                      {discountPercentage}% OFF
-                    </Badge>
-                  </>
-                )}
               </div>
             </div>
 
             <p className="text-gray-600 leading-relaxed">
-              {product.description}
+              {product.description || "This premium product combines exceptional quality with timeless style."}
             </p>
 
             {/* Size Selection */}
-            <div>
-              <h3 className="text-lg font-semibold mb-3">Size</h3>
-              <div className="grid grid-cols-5 gap-2">
-                {product.sizes.map((size) => (
-                  <button
-                    key={size}
-                    onClick={() => setSelectedSize(size)}
-                    className={`py-2 px-4 border rounded-md text-center transition-all duration-200 ${
-                      selectedSize === size
-                        ? "border-luxury-gold bg-luxury-gold text-black"
-                        : "border-gray-300 hover:border-luxury-gold"
-                    }`}
-                  >
-                    {size}
-                  </button>
-                ))}
+            {product.sizes.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Size</h3>
+                <div className="grid grid-cols-5 gap-2">
+                  {product.sizes.map((size) => (
+                    <button
+                      key={size}
+                      onClick={() => setSelectedSize(size)}
+                      className={`py-2 px-4 border rounded-md text-center transition-all duration-200 ${
+                        selectedSize === size
+                          ? "border-luxury-gold bg-luxury-gold text-black"
+                          : "border-gray-300 hover:border-luxury-gold"
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Color Selection */}
             <div>
               <h3 className="text-lg font-semibold mb-3">Color</h3>
               <div className="flex space-x-3">
-                {product.colors.map((color) => (
+                {defaultColors.map((color) => (
                   <button
                     key={color.name}
                     onClick={() => setSelectedColor(color.name)}
@@ -194,12 +232,15 @@ const ProductDetail = () => {
                 </button>
                 <span className="w-12 text-center font-semibold">{quantity}</span>
                 <button
-                  onClick={() => setQuantity(quantity + 1)}
+                  onClick={() => setQuantity(Math.min(product.stock_quantity, quantity + 1))}
                   className="w-10 h-10 rounded-md border border-gray-300 flex items-center justify-center hover:border-luxury-gold transition-colors"
                 >
                   +
                 </button>
               </div>
+              <p className="text-sm text-gray-500 mt-1">
+                {product.stock_quantity} items available
+              </p>
             </div>
 
             {/* Action Buttons */}
@@ -207,10 +248,11 @@ const ProductDetail = () => {
               <Button
                 onClick={handleAddToCart}
                 size="lg"
+                disabled={product.stock_quantity === 0}
                 className="w-full bg-luxury-gold text-black hover:bg-yellow-400 font-semibold py-3"
               >
                 <ShoppingBag className="h-5 w-5 mr-2" />
-                Add to Cart - ${product.price * quantity}
+                {product.stock_quantity === 0 ? 'Out of Stock' : `Add to Cart - $${(product.price * quantity).toFixed(2)}`}
               </Button>
               
               <Button variant="outline" size="lg" className="w-full">
@@ -220,17 +262,19 @@ const ProductDetail = () => {
             </div>
 
             {/* Features */}
-            <div className="border-t pt-6">
-              <h3 className="text-lg font-semibold mb-3">Features</h3>
-              <ul className="space-y-2">
-                {product.features.map((feature, index) => (
-                  <li key={index} className="flex items-center text-gray-600">
-                    <Shield className="h-4 w-4 mr-2 text-luxury-gold" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {product.tags.length > 0 && (
+              <div className="border-t pt-6">
+                <h3 className="text-lg font-semibold mb-3">Features</h3>
+                <ul className="space-y-2">
+                  {product.tags.map((tag, index) => (
+                    <li key={index} className="flex items-center text-gray-600">
+                      <Shield className="h-4 w-4 mr-2 text-luxury-gold" />
+                      {tag}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             {/* Shipping & Returns */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-6 border-t">
@@ -273,16 +317,16 @@ const ProductDetail = () => {
             <TabsContent value="details" className="mt-6">
               <div className="prose max-w-none">
                 <p className="text-gray-600 leading-relaxed mb-4">
-                  {product.description}
+                  {product.description || "This premium product combines exceptional quality with timeless style."}
                 </p>
                 <h4 className="text-lg font-semibold mb-2">Care Instructions</h4>
-                <p className="text-gray-600">{product.care}</p>
+                <p className="text-gray-600">Dry clean only. Store in garment bag.</p>
               </div>
             </TabsContent>
             
             <TabsContent value="sizing" className="mt-6">
               <div className="prose max-w-none">
-                <p className="text-gray-600 mb-4">{product.sizing}</p>
+                <p className="text-gray-600 mb-4">True to size. Please refer to our size guide for the best fit.</p>
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h4 className="font-semibold mb-2">Size Chart</h4>
                   <p className="text-sm text-gray-600">
@@ -295,7 +339,7 @@ const ProductDetail = () => {
             
             <TabsContent value="shipping" className="mt-6">
               <div className="prose max-w-none">
-                <p className="text-gray-600">{product.shipping}</p>
+                <p className="text-gray-600">Free shipping on orders over $200. Express delivery available.</p>
                 <div className="mt-4 space-y-2">
                   <p className="text-sm"><strong>Standard Delivery:</strong> 3-5 business days</p>
                   <p className="text-sm"><strong>Express Delivery:</strong> 1-2 business days</p>
