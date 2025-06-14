@@ -4,9 +4,12 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Heart, ShoppingBag } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useWishlist } from "@/hooks/useWishlist";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 interface Product {
-  id: number;
+  id: string | number;
   name: string;
   price: number;
   image: string;
@@ -18,11 +21,25 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ product }: ProductCardProps) => {
-  const [isWishlisted, setIsWishlisted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleWishlist = () => {
-    setIsWishlisted(!isWishlisted);
+  // Wishlist integration
+  const { user } = useAuth();
+  const { wishlist, addToWishlist, removeFromWishlist, isLoading: wishLoading } = useWishlist();
+
+  const isWishlisted = wishlist.includes(String(product.id));
+
+  const handleWishlist = async (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent navigation if in Link or overlay
+    if (!user) {
+      toast.error("Please sign in to use your wishlist.");
+      return;
+    }
+    if (isWishlisted) {
+      await removeFromWishlist(String(product.id));
+    } else {
+      await addToWishlist(String(product.id));
+    }
   };
 
   const handleAddToCart = async () => {
@@ -48,7 +65,12 @@ const ProductCard = ({ product }: ProductCardProps) => {
         {/* Wishlist Button */}
         <button
           onClick={handleWishlist}
-          className="absolute top-3 right-3 p-2 bg-white bg-opacity-90 rounded-full shadow-md hover:bg-opacity-100 transition-all duration-200"
+          disabled={wishLoading}
+          className={cn(
+            "absolute top-3 right-3 p-2 bg-white bg-opacity-90 rounded-full shadow-md hover:bg-opacity-100 transition-all duration-200",
+            wishLoading ? "opacity-50 pointer-events-none" : ""
+          )}
+          aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
         >
           <Heart
             className={cn(
