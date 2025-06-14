@@ -88,10 +88,8 @@ const AuthenticatedNavbar = () => {
               </>
             )}
 
-            <Button variant="ghost" size="icon">
-              <User className="h-5 w-5" />
-            </Button>
-            
+            {/* User button removed for authenticated users */}
+
             <Button variant="ghost" size="icon" className="relative">
               <Heart className="h-5 w-5" />
               {wishlistItems > 0 && (
@@ -191,9 +189,7 @@ const AuthenticatedNavbar = () => {
                 )}
 
                 <div className="flex items-center space-x-4">
-                  <Button variant="ghost" size="icon">
-                    <User className="h-5 w-5" />
-                  </Button>
+                  {/* User button removed for authenticated users */}
                   
                   <Button variant="ghost" size="icon" className="relative">
                     <Heart className="h-5 w-5" />
