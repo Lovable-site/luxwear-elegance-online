@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X } from "lucide-react";
 import ImageUpload from "./ImageUpload";
+import { toast } from "sonner";
 
 interface Category {
   id: string;
@@ -42,8 +44,23 @@ const ProductForm = ({ product, onClose, onSave }: ProductFormProps) => {
   }, []);
 
   useEffect(() => {
-    // Initialize form data whenever product changes
+    console.log('ProductForm useEffect - product:', product);
+    
     if (product) {
+      console.log('Setting form data with product:', {
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        category_id: product.category_id,
+        sku: product.sku,
+        stock_quantity: product.stock_quantity,
+        sizes: product.sizes,
+        tags: product.tags,
+        is_featured: product.is_featured,
+        is_active: product.is_active,
+        images: product.images
+      });
+      
       setFormData({
         name: product.name || '',
         description: product.description || '',
@@ -51,14 +68,14 @@ const ProductForm = ({ product, onClose, onSave }: ProductFormProps) => {
         category_id: product.category_id || '',
         sku: product.sku || '',
         stock_quantity: product.stock_quantity?.toString() || '',
-        sizes: product.sizes?.join(', ') || '',
-        tags: product.tags?.join(', ') || '',
-        is_featured: product.is_featured || false,
-        is_active: product.is_active ?? true,
-        images: product.images || []
+        sizes: Array.isArray(product.sizes) ? product.sizes.join(', ') : '',
+        tags: Array.isArray(product.tags) ? product.tags.join(', ') : '',
+        is_featured: Boolean(product.is_featured),
+        is_active: product.is_active !== false,
+        images: Array.isArray(product.images) ? product.images : []
       });
     } else {
-      // Reset to default values for new product
+      console.log('Resetting form data for new product');
       setFormData({
         name: '',
         description: '',
@@ -111,26 +128,31 @@ const ProductForm = ({ product, onClose, onSave }: ProductFormProps) => {
 
       let error;
       if (product) {
-        // Update existing product
+        console.log('Updating product with data:', productData);
         ({ error } = await supabase
           .from('products')
           .update(productData)
           .eq('id', product.id));
       } else {
-        // Create new product
+        console.log('Creating new product with data:', productData);
         ({ error } = await supabase
           .from('products')
           .insert([productData]));
       }
 
       if (error) throw error;
+      
+      toast.success(product ? 'Product updated successfully' : 'Product created successfully');
       onSave();
     } catch (error) {
       console.error('Error saving product:', error);
+      toast.error('Failed to save product');
     } finally {
       setLoading(false);
     }
   };
+
+  console.log('ProductForm render - formData:', formData);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
