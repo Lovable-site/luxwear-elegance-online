@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -37,15 +36,14 @@ const ProductForm = ({ product, onClose, onSave }: ProductFormProps) => {
     is_active: true,
     images: [] as string[]
   });
-  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     fetchCategories();
   }, []);
 
   useEffect(() => {
-    // Only initialize form data once when product prop changes and we haven't initialized yet
-    if (product && !isInitialized) {
+    // Initialize form data whenever product changes
+    if (product) {
       setFormData({
         name: product.name || '',
         description: product.description || '',
@@ -59,8 +57,7 @@ const ProductForm = ({ product, onClose, onSave }: ProductFormProps) => {
         is_active: product.is_active ?? true,
         images: product.images || []
       });
-      setIsInitialized(true);
-    } else if (!product && !isInitialized) {
+    } else {
       // Reset to default values for new product
       setFormData({
         name: '',
@@ -75,9 +72,8 @@ const ProductForm = ({ product, onClose, onSave }: ProductFormProps) => {
         is_active: true,
         images: []
       });
-      setIsInitialized(true);
     }
-  }, [product, isInitialized]);
+  }, [product]);
 
   const fetchCategories = async () => {
     try {
