@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/context/CartContext";
+import { DataService } from "@/services/dataService";
 import { toast } from "sonner";
 
 export const useCartPersistence = () => {
@@ -32,24 +32,7 @@ export const useCartPersistence = () => {
     if (!user) return;
 
     try {
-      const { data: cartData, error } = await supabase
-        .from('cart_items')
-        .select(`
-          *,
-          products (
-            id,
-            name,
-            price,
-            images
-          )
-        `)
-        .eq('user_id', user.id);
-
-      if (error) {
-        console.error('[CartPersistence] Error loading cart:', error);
-        toast.error('Failed to load cart from database');
-        return;
-      }
+      const cartData = await DataService.getCartFromDatabase(user.id);
 
       const dbCart = cartData?.map(item => ({
         id: String(item.product_id),
@@ -75,6 +58,7 @@ export const useCartPersistence = () => {
       hasLoadedFromDB.current = true;
     } catch (error) {
       console.error('[CartPersistence] Error in loadCartFromDatabase:', error);
+      toast.error('Failed to load cart from database');
     } finally {
       isInitializing.current = false;
     }
@@ -84,24 +68,7 @@ export const useCartPersistence = () => {
     if (!user || isInitializing.current) return;
 
     try {
-      // Clear existing cart items for this user
-      await supabase
-        .from('cart_items')
-        .delete()
-        .eq('user_id', user.id);
-
-      // Insert current cart items
-      if (itemsToSync.length > 0) {
-        const cartData = itemsToSync.map(item => ({
-          user_id: user.id,
-          product_id: String(item.id),
-          quantity: item.quantity,
-          size: item.size || null
-        }));
-
-        await supabase.from('cart_items').insert(cartData);
-      }
-
+      await DataService.syncCartToDatabase(user.id, itemsToSync);
       console.log('[CartPersistence] Cart synced successfully');
     } catch (error) {
       console.error('[CartPersistence] Error syncing cart:', error);
@@ -122,7 +89,7 @@ export const useCartPersistence = () => {
       const tax = (subtotal - discount) * 0.08;
       const total = subtotal - discount + shippingCost + tax;
 
-      // Create order
+      // Use DataService for order creation
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
@@ -153,10 +120,7 @@ export const useCartPersistence = () => {
       if (itemsError) throw itemsError;
 
       // Clear cart from database
-      await supabase
-        .from('cart_items')
-        .delete()
-        .eq('user_id', user.id);
+      await DataService.syncCartToDatabase(user.id, []);
 
       return order;
     } catch (error) {
