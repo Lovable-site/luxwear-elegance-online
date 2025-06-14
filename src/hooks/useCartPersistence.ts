@@ -25,6 +25,7 @@ export const useCartPersistence = () => {
   const { cartItems, setCartItems } = useCart();
   const dbCartLoadedRef = useRef(false);
   const isLoadingRef = useRef(false);
+  const lastSyncedCartRef = useRef<string>("");
 
   // Load cart from database when user logs in (only once)
   useEffect(() => {
@@ -70,17 +71,34 @@ export const useCartPersistence = () => {
           if (dbCart.length === 0 && localCart.length > 0) {
             // DB is empty, but local cart has items: keep local cart & sync to DB
             console.log("[CartPersistence] Local cart present, DB empty. Keeping local cart & syncing to DB.");
-            // Don't change cartItems here, just sync current state
+            // Store the current cart state to prevent re-syncing
+            lastSyncedCartRef.current = JSON.stringify(cartItems);
             await syncCartToDatabase();
           } else if (dbCart.length > 0 && localCart.length === 0) {
             // DB has items, local cart is empty: set to DB cart
             console.log("[CartPersistence] DB has cart, local is empty. Loading DB cart.");
             setCartItems(dbCart);
+            lastSyncedCartRef.current = JSON.stringify(dbCart);
           } else if (dbCart.length > 0 && localCart.length > 0) {
-            // Both have items: merge and sync
-            const merged = mergeCarts(localCart, dbCart);
-            setCartItems(merged);
-            console.log("[CartPersistence] Both carts have items. Merging and syncing.");
+            // Both have items: Only merge if we haven't done this before
+            const currentCartString = JSON.stringify(localCart);
+            const dbCartString = JSON.stringify(dbCart);
+            
+            // Check if we've already processed this exact combination
+            if (lastSyncedCartRef.current !== currentCartString && lastSyncedCartRef.current !== dbCartString) {
+              const merged = mergeCarts(localCart, dbCart);
+              setCartItems(merged);
+              lastSyncedCartRef.current = JSON.stringify(merged);
+              console.log("[CartPersistence] Both carts have items. Merging and syncing.");
+            } else {
+              // Use the more recent cart (prefer local)
+              setCartItems(localCart);
+              lastSyncedCartRef.current = currentCartString;
+              console.log("[CartPersistence] Using local cart, already synced.");
+            }
+          } else {
+            // Both empty
+            lastSyncedCartRef.current = "[]";
           }
           
           dbCartLoadedRef.current = true;
@@ -98,11 +116,19 @@ export const useCartPersistence = () => {
     if (!user) {
       dbCartLoadedRef.current = false;
       isLoadingRef.current = false;
+      lastSyncedCartRef.current = "";
     }
   }, [user]);
 
   const syncCartToDatabase = async () => {
     if (!user || isLoadingRef.current) return;
+
+    // Prevent syncing if cart hasn't changed
+    const currentCartString = JSON.stringify(cartItems);
+    if (lastSyncedCartRef.current === currentCartString) {
+      console.log('[CartPersistence] Cart unchanged, skipping sync');
+      return;
+    }
 
     try {
       // Clear existing cart items for this user
@@ -123,6 +149,8 @@ export const useCartPersistence = () => {
         await supabase.from('cart_items').insert(cartData);
       }
 
+      // Update the last synced state
+      lastSyncedCartRef.current = currentCartString;
       console.log('[CartPersistence] Cart sync completed successfully');
     } catch (error) {
       console.error('[CartPersistence] Error syncing cart:', error);
