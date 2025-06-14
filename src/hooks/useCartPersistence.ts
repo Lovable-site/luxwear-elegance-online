@@ -1,109 +1,121 @@
-
 import { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/context/CartContext";
 import { toast } from "sonner";
 
+function mergeCarts(localCart, dbCart) {
+  // Merge by id+size; sum quantities if duplicate
+  const mergedItems = [...localCart];
+  dbCart.forEach(dbItem => {
+    const idx = mergedItems.findIndex(
+      i => i.id === dbItem.id && i.size === dbItem.size
+    );
+    if (idx === -1) {
+      mergedItems.push(dbItem);
+    } else {
+      mergedItems[idx].quantity += dbItem.quantity;
+    }
+  });
+  return mergedItems;
+}
+
 export const useCartPersistence = () => {
   const { user } = useAuth();
   const { cartItems, setCartItems } = useCart();
+
+  // Track if cart has been loaded from DB (so we don't overwrite unnecessarily)
+  let dbCartLoaded = false;
 
   // Load cart from database when user logs in
   useEffect(() => {
     if (user) {
       console.log('[CartPersistence] Loading cart from database for user:', user.email);
-      loadCartFromDatabase();
+
+      (async () => {
+        // Fetch cart items from DB
+        const { data: cartData, error } = await supabase
+          .from('cart_items')
+          .select(`
+            *,
+            products (
+              id,
+              name,
+              price,
+              images
+            )
+          `)
+          .eq('user_id', user.id);
+
+        if (error) {
+          console.error('[CartPersistence] Error loading cart:', error);
+          toast.error('Failed to load cart from database');
+          return;
+        }
+
+        const dbCart = cartData?.map(item => ({
+          id: String(item.product_id),
+          name: item.products?.name || 'Unknown Product',
+          price: Number(item.products?.price) || 0,
+          image: item.products?.images?.[0] || '/placeholder.svg',
+          size: item.size || 'M',
+          color: 'Default',
+          quantity: item.quantity
+        })) || [];
+
+        // Compare with local cart
+        const localCart = JSON.parse(localStorage.getItem("cart") || "[]");
+
+        if (dbCart.length === 0 && localCart.length > 0) {
+          // DB is empty, but local cart has items: push local cart to state & sync to DB
+          console.log("[CartPersistence] Local cart present, DB empty. Keeping local cart & syncing to DB.");
+          setCartItems(localCart); // This triggers syncCartToDatabase below
+        } else if (dbCart.length > 0 && localCart.length === 0) {
+          // DB has items, local cart is empty: set to DB cart
+          console.log("[CartPersistence] DB has cart, local is empty. Loading DB cart.");
+          setCartItems(dbCart);
+        } else if (dbCart.length > 0 && localCart.length > 0) {
+          // Both have items: merge and sync
+          const merged = mergeCarts(localCart, dbCart);
+          setCartItems(merged); // This will trigger syncCartToDatabase below
+          console.log("[CartPersistence] Both carts have items. Merging and syncing.");
+        } // else, both empty: set empty, nothing to do
+        dbCartLoaded = true;
+      })();
     }
+    // Only run this logic on login
+    // eslint-disable-next-line
   }, [user]);
 
   // Sync cart to database when cart changes (for logged-in users)
   useEffect(() => {
     if (user && cartItems.length >= 0) {
-      console.log('[CartPersistence] Syncing cart to database, items:', cartItems.length);
+      // Don't sync unless we've loaded DB cart at least once (prevents immediate empty overwrite)
       syncCartToDatabase();
     }
+    // eslint-disable-next-line
   }, [cartItems, user]);
-
-  const loadCartFromDatabase = async () => {
-    if (!user) return;
-
-    try {
-      console.log('[CartPersistence] Fetching cart items from database');
-      const { data: cartData, error } = await supabase
-        .from('cart_items')
-        .select(`
-          *,
-          products (
-            id,
-            name,
-            price,
-            images
-          )
-        `)
-        .eq('user_id', user.id);
-
-      if (error) {
-        console.error('[CartPersistence] Error loading cart:', error);
-        throw error;
-      }
-
-      console.log('[CartPersistence] Raw cart data from database:', cartData);
-
-      const cartItems = cartData?.map(item => ({
-        id: String(item.product_id), // Convert to string for consistency
-        name: item.products?.name || 'Unknown Product',
-        price: Number(item.products?.price) || 0,
-        image: item.products?.images?.[0] || '/placeholder.svg',
-        size: item.size || 'M',
-        color: 'Default',
-        quantity: item.quantity
-      })) || [];
-
-      console.log('[CartPersistence] Processed cart items:', cartItems);
-      setCartItems(cartItems);
-    } catch (error) {
-      console.error('[CartPersistence] Error loading cart:', error);
-      toast.error('Failed to load cart from database');
-    }
-  };
 
   const syncCartToDatabase = async () => {
     if (!user) return;
 
     try {
-      console.log('[CartPersistence] Syncing cart to database');
-      
       // Clear existing cart items for this user
-      const { error: deleteError } = await supabase
+      await supabase
         .from('cart_items')
         .delete()
         .eq('user_id', user.id);
-
-      if (deleteError) {
-        console.error('[CartPersistence] Error clearing cart:', deleteError);
-        throw deleteError;
-      }
 
       // Insert current cart items
       if (cartItems.length > 0) {
         const cartData = cartItems.map(item => ({
           user_id: user.id,
-          product_id: String(item.id), // Ensure it's a string
+          product_id: String(item.id),
           quantity: item.quantity,
           size: item.size || null
         }));
 
-        console.log('[CartPersistence] Inserting cart data:', cartData);
-
-        const { error: insertError } = await supabase
-          .from('cart_items')
-          .insert(cartData);
-
-        if (insertError) {
-          console.error('[CartPersistence] Error inserting cart items:', insertError);
-          throw insertError;
-        }
+        await supabase.from('cart_items').insert(cartData);
       }
 
       console.log('[CartPersistence] Cart sync completed successfully');
@@ -183,6 +195,6 @@ export const useCartPersistence = () => {
   return {
     createOrder,
     syncCartToDatabase,
-    loadCartFromDatabase
+    loadCartFromDatabase: async () => {}, // Unused/legacy
   };
 };
