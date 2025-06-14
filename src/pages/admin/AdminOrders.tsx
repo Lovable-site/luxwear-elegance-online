@@ -1,5 +1,7 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { DataService } from "@/services/dataService";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,6 +49,9 @@ const AdminOrders = () => {
 
   const fetchOrders = async () => {
     try {
+      setLoading(true);
+      console.log('[AdminOrders] Fetching orders...');
+      
       const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -61,10 +66,17 @@ const AdminOrders = () => {
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[AdminOrders] Error fetching orders:', error);
+        toast.error('Failed to fetch orders');
+        throw error;
+      }
+      
+      console.log('[AdminOrders] Orders fetched successfully:', data?.length);
       setOrders(data || []);
     } catch (error) {
-      console.error('Error fetching orders:', error);
+      console.error('[AdminOrders] Error in fetchOrders:', error);
+      toast.error('Failed to load orders');
     } finally {
       setLoading(false);
     }
@@ -72,40 +84,24 @@ const AdminOrders = () => {
 
   const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
     try {
-      const { error } = await supabase
-        .from('orders')
-        .update({ status: newStatus, updated_at: new Date().toISOString() })
-        .eq('id', orderId);
-
-      if (error) throw error;
-      fetchOrders();
+      console.log('[AdminOrders] Updating order status:', orderId, newStatus);
+      await DataService.updateOrderStatus(orderId, newStatus);
+      toast.success('Order status updated successfully');
+      fetchOrders(); // Refresh the orders list
     } catch (error) {
-      console.error('Error updating order status:', error);
+      console.error('[AdminOrders] Error updating order status:', error);
+      toast.error('Failed to update order status');
     }
   };
 
   const deleteOrder = async (orderId: string) => {
     try {
-      // First delete order items
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .delete()
-        .eq('order_id', orderId);
-
-      if (itemsError) throw itemsError;
-
-      // Then delete the order
-      const { error: orderError } = await supabase
-        .from('orders')
-        .delete()
-        .eq('id', orderId);
-
-      if (orderError) throw orderError;
-
+      console.log('[AdminOrders] Deleting order:', orderId);
+      await DataService.deleteOrder(orderId);
       toast.success('Order deleted successfully');
-      fetchOrders();
+      fetchOrders(); // Refresh the orders list
     } catch (error) {
-      console.error('Error deleting order:', error);
+      console.error('[AdminOrders] Error deleting order:', error);
       toast.error('Failed to delete order');
     }
   };
@@ -335,6 +331,17 @@ const AdminOrders = () => {
       )}
     </div>
   );
+
+  function getStatusColor(status: string) {
+    switch (status) {
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'processing': return 'bg-blue-100 text-blue-800';
+      case 'shipped': return 'bg-green-100 text-green-800';
+      case 'delivered': return 'bg-emerald-100 text-emerald-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  }
 };
 
 export default AdminOrders;
