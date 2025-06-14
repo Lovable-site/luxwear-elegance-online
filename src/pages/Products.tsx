@@ -17,56 +17,56 @@ const Products = () => {
   // Mock products data
   const allProducts = [
     {
-      id: 1,
+      id: "6c424fe9-978b-4755-a29a-2a2258b00001",
       name: "Elegance Silk Dress",
       price: 299,
       image: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=600&fit=crop",
       category: "women"
     },
     {
-      id: 2,
+      id: "6c424fe9-978b-4755-a29a-2a2258b00002",
       name: "Classic Wool Blazer",
       price: 450,
       image: "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=400&h=600&fit=crop",
       category: "men"
     },
     {
-      id: 3,
+      id: "6c424fe9-978b-4755-a29a-2a2258b00003",
       name: "Premium Leather Handbag",
       price: 189,
       image: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=400&h=600&fit=crop",
       category: "accessories"
     },
     {
-      id: 4,
+      id: "6c424fe9-978b-4755-a29a-2a2258b00004",
       name: "Cashmere Sweater",
       price: 320,
       image: "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=400&h=600&fit=crop",
       category: "women"
     },
     {
-      id: 5,
+      id: "6c424fe9-978b-4755-a29a-2a2258b00005",
       name: "Luxury Watch",
       price: 1200,
       image: "https://images.unsplash.com/photo-1523170335258-f5c6c6bd6edb?w=400&h=600&fit=crop",
       category: "accessories"
     },
     {
-      id: 6,
+      id: "6c424fe9-978b-4755-a29a-2a2258b00006",
       name: "Designer Suit",
       price: 890,
       image: "https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?w=400&h=600&fit=crop",
       category: "men"
     },
     {
-      id: 7,
+      id: "6c424fe9-978b-4755-a29a-2a2258b00007",
       name: "Evening Gown",
       price: 650,
       image: "https://images.unsplash.com/photo-1566479179817-66c1fd875aa0?w=400&h=600&fit=crop",
       category: "women"
     },
     {
-      id: 8,
+      id: "6c424fe9-978b-4755-a29a-2a2258b00008",
       name: "Italian Leather Shoes",
       price: 420,
       image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=600&fit=crop",
