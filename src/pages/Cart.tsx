@@ -7,7 +7,7 @@ import { Trash2, Plus, Minus, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import { useCart } from "@/context/CartContext";
 import { useCartPersistence } from "@/hooks/useCartPersistence";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 
 const Cart = () => {
   const { cartItems, updateQuantity, removeFromCart } = useCart();

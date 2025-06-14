@@ -7,6 +7,7 @@ import { ShoppingCart, CreditCard } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "@/context/CartContext";
 import { useCartPersistence } from "@/hooks/useCartPersistence";
+import { supabase } from "@/integrations/supabase/client";
 
 type ShippingFields = {
   fullName: string;
