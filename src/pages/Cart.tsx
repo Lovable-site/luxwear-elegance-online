@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -6,15 +7,15 @@ import { Separator } from "@/components/ui/separator";
 import { Trash2, Plus, Minus, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import { useCart } from "@/context/CartContext";
-import { useCartPersistence } from "@/hooks/useCartPersistence";
+import { useCartSync } from "@/hooks/useCartSync";
 import { supabase } from "@/integrations/supabase/client";
 
 const Cart = () => {
   const { cartItems, updateQuantity, removeFromCart } = useCart();
-  const { syncCartToDatabase } = useCartPersistence();
+  useCartSync(); // Handle automatic syncing
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState("");
-  const [taxRate, setTaxRate] = useState<number>(0.08); // default fallback 8%
+  const [taxRate, setTaxRate] = useState<number>(0.08);
 
   // Get tax rate from admin settings on mount
   useEffect(() => {
@@ -26,7 +27,7 @@ const Cart = () => {
           .limit(1)
           .maybeSingle();
         if (!error && data?.tax_rate != null) {
-          setTaxRate(Number(data.tax_rate) / 100); // divides by 100 (e.g., 8.5% => 0.085)
+          setTaxRate(Number(data.tax_rate) / 100);
         }
       } catch (e) {
         // ignore, fallback to default
@@ -34,15 +35,6 @@ const Cart = () => {
     }
     fetchAdminTaxRate();
   }, []);
-
-  // Sync cart changes to database (with debouncing to prevent excessive calls)
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      syncCartToDatabase();
-    }, 500); // Debounce for 500ms
-
-    return () => clearTimeout(timeoutId);
-  }, [cartItems]);
 
   const handleUpdateQuantity = (id: string, size: string, newQuantity: number) => {
     updateQuantity(id, size, newQuantity);

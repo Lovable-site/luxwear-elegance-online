@@ -1,8 +1,9 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { useCartPersistence } from "@/hooks/useCartPersistence";
 
 type CartItem = {
-  id: string; // Changed to always be string for consistency
+  id: string;
   name: string;
   price: number;
   image: string;
@@ -32,6 +33,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return [];
     }
   });
+
+  // Initialize cart persistence
+  useCartPersistence();
 
   useEffect(() => {
     try {
