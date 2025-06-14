@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,7 @@ interface Product {
   is_featured: boolean;
   is_active: boolean;
   images: string[];
+  category_id: string;
   categories: { name: string } | null;
 }
 
@@ -120,6 +122,27 @@ const AdminProducts = () => {
     product.sku.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleEditProduct = (product: Product) => {
+    console.log('Editing product:', product);
+    setEditingProduct(product);
+    setShowForm(true);
+  };
+
+  const handleAddProduct = () => {
+    setEditingProduct(null);
+    setShowForm(true);
+  };
+
+  const handleCloseForm = () => {
+    setShowForm(false);
+    setEditingProduct(null);
+  };
+
+  const handleSaveProduct = () => {
+    fetchProducts();
+    handleCloseForm();
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -136,7 +159,7 @@ const AdminProducts = () => {
           <p className="text-gray-600">Manage your product inventory</p>
         </div>
         <Button 
-          onClick={() => setShowForm(true)}
+          onClick={handleAddProduct}
           className="bg-luxury-gold text-black hover:bg-yellow-400"
         >
           <Plus className="mr-2 h-4 w-4" />
@@ -198,10 +221,7 @@ const AdminProducts = () => {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => {
-                      setEditingProduct(product);
-                      setShowForm(true);
-                    }}
+                    onClick={() => handleEditProduct(product)}
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -257,15 +277,8 @@ const AdminProducts = () => {
       {showForm && (
         <ProductForm
           product={editingProduct}
-          onClose={() => {
-            setShowForm(false);
-            setEditingProduct(null);
-          }}
-          onSave={() => {
-            fetchProducts();
-            setShowForm(false);
-            setEditingProduct(null);
-          }}
+          onClose={handleCloseForm}
+          onSave={handleSaveProduct}
         />
       )}
     </div>
