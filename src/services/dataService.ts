@@ -238,10 +238,30 @@ export class DataService {
   }
 
   static async deleteOrder(orderId: string) {
-    console.log('[DataService] Deleting order:', orderId);
+    console.log('[DataService] Starting order deletion process for:', orderId);
     
     try {
-      // First delete order items (due to foreign key constraints)
+      // First, let's check if the order exists
+      const { data: orderExists, error: checkError } = await supabase
+        .from('orders')
+        .select('id')
+        .eq('id', orderId)
+        .single();
+
+      if (checkError) {
+        console.error('[DataService] Error checking order existence:', checkError);
+        throw new Error(`Order not found: ${checkError.message}`);
+      }
+
+      if (!orderExists) {
+        console.log('[DataService] Order does not exist:', orderId);
+        throw new Error('Order not found');
+      }
+
+      console.log('[DataService] Order exists, proceeding with deletion');
+
+      // Delete order items first (due to foreign key constraints)
+      console.log('[DataService] Deleting order items for order:', orderId);
       const { error: itemsError } = await supabase
         .from('order_items')
         .delete()
@@ -249,10 +269,13 @@ export class DataService {
 
       if (itemsError) {
         console.error('[DataService] Error deleting order items:', itemsError);
-        throw itemsError;
+        throw new Error(`Failed to delete order items: ${itemsError.message}`);
       }
 
-      // Then delete the order
+      console.log('[DataService] Order items deleted successfully');
+
+      // Then delete the order itself
+      console.log('[DataService] Deleting order:', orderId);
       const { error: orderError } = await supabase
         .from('orders')
         .delete()
@@ -260,10 +283,27 @@ export class DataService {
 
       if (orderError) {
         console.error('[DataService] Error deleting order:', orderError);
-        throw orderError;
+        throw new Error(`Failed to delete order: ${orderError.message}`);
       }
 
       console.log('[DataService] Order deleted successfully:', orderId);
+
+      // Verify the order is actually deleted
+      const { data: verifyDeleted, error: verifyError } = await supabase
+        .from('orders')
+        .select('id')
+        .eq('id', orderId)
+        .maybeSingle();
+
+      if (verifyError) {
+        console.error('[DataService] Error verifying deletion:', verifyError);
+      } else if (verifyDeleted) {
+        console.error('[DataService] Warning: Order still exists after deletion:', orderId);
+        throw new Error('Order deletion verification failed - order still exists');
+      } else {
+        console.log('[DataService] Deletion verified - order no longer exists');
+      }
+
       return { success: true };
     } catch (error) {
       console.error('[DataService] Error in deleteOrder:', error);
