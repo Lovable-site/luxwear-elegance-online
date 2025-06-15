@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -53,12 +52,6 @@ const AuthenticatedNavbar = () => {
               className="text-gray-800 hover:text-luxury-gold transition-colors duration-200"
             >
               Products
-            </Link>
-            <Link 
-              to="/products" 
-              className="text-gray-800 hover:text-luxury-gold transition-colors duration-200"
-            >
-              Category
             </Link>
             <Link 
               to="/contact" 
@@ -142,13 +135,6 @@ const AuthenticatedNavbar = () => {
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Products
-              </Link>
-              <Link 
-                to="/products" 
-                className="text-gray-800 hover:text-luxury-gold transition-colors duration-200"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Category
               </Link>
               <Link 
                 to="/contact" 
