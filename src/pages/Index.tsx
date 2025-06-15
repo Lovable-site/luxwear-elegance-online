@@ -19,6 +19,8 @@ interface Collection {
   id: string;
   name: string;
   description: string;
+  image_url: string | null;
+  is_curated: boolean;
 }
 
 const Index = () => {
@@ -28,7 +30,7 @@ const Index = () => {
 
   useEffect(() => {
     fetchFeaturedProducts();
-    fetchCollections();
+    fetchCuratedCollections();
   }, []);
 
   const fetchFeaturedProducts = async () => {
@@ -55,30 +57,38 @@ const Index = () => {
     }
   };
 
-  const fetchCollections = async () => {
+  const fetchCuratedCollections = async () => {
     try {
       const { data, error } = await supabase
         .from('categories')
-        .select('id, name, description')
+        .select('id, name, description, image_url, is_curated')
+        .eq('is_curated', true)
         .limit(3)
         .order('name');
 
       if (error) throw error;
       setCollections(data || []);
     } catch (error) {
-      console.error('Error fetching collections:', error);
+      console.error('Error fetching curated collections:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const getCollectionImage = (categoryName: string) => {
+  const getCollectionImage = (collection: Collection) => {
+    // Use the uploaded image if available, otherwise fallback to placeholder
+    if (collection.image_url) {
+      return collection.image_url;
+    }
+    
+    // Fallback images based on collection name
     const imageMap: { [key: string]: string } = {
       'women': "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600&h=800&fit=crop",
       'men': "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=800&fit=crop",
       'accessories': "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&h=800&fit=crop",
     };
-    return imageMap[categoryName.toLowerCase()] || "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&h=800&fit=crop";
+    
+    return imageMap[collection.name.toLowerCase()] || "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&h=800&fit=crop";
   };
 
   return (
@@ -115,7 +125,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Featured Collections */}
+      {/* Curated Collections */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
@@ -133,7 +143,7 @@ const Index = () => {
                 <div key={collection.id} className="group relative overflow-hidden rounded-lg animate-scale-in" style={{ animationDelay: `${index * 0.2}s` }}>
                   <div className="aspect-[3/4] relative">
                     <img
-                      src={getCollectionImage(collection.name)}
+                      src={getCollectionImage(collection)}
                       alt={collection.name}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     />
@@ -157,7 +167,8 @@ const Index = () => {
             </div>
           ) : (
             <div className="text-center py-12">
-              <p className="text-gray-500">No collections available</p>
+              <p className="text-gray-500">No curated collections available</p>
+              <p className="text-sm text-gray-400 mt-2">Mark collections as curated through the admin panel</p>
             </div>
           )}
         </div>
