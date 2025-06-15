@@ -84,11 +84,24 @@ export const useCartPersistence = () => {
     }
 
     try {
-      // Calculate totals
+      // Get current admin settings for calculations
+      const { data: settings } = await supabase
+        .from('store_settings')
+        .select('tax_rate, free_shipping_threshold, standard_shipping_rate')
+        .limit(1)
+        .maybeSingle();
+
+      const storeSettings = {
+        tax_rate: Number(settings?.tax_rate) || 8.0,
+        free_shipping_threshold: Number(settings?.free_shipping_threshold) || 200,
+        standard_shipping_rate: Number(settings?.standard_shipping_rate) || 25
+      };
+
+      // Calculate totals using admin settings
       const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
       const discount = subtotal > 500 ? subtotal * 0.1 : 0;
-      const shippingCost = subtotal > 200 ? 0 : 25;
-      const tax = (subtotal - discount) * 0.08;
+      const shippingCost = subtotal > storeSettings.free_shipping_threshold ? 0 : storeSettings.standard_shipping_rate;
+      const tax = (subtotal - discount) * (storeSettings.tax_rate / 100);
       const total = subtotal - discount + shippingCost + tax;
 
       // Use DataService for order creation

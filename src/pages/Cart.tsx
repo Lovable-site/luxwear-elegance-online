@@ -11,6 +11,12 @@ import { useCartSync } from "@/hooks/useCartSync";
 import { useCartPersistence } from "@/hooks/useCartPersistence";
 import { supabase } from "@/integrations/supabase/client";
 
+type StoreSettings = {
+  tax_rate: number;
+  free_shipping_threshold: number;
+  standard_shipping_rate: number;
+};
+
 const Cart = () => {
   const { cartItems, updateQuantity, removeFromCart } = useCart();
   
@@ -20,25 +26,35 @@ const Cart = () => {
   
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState("");
-  const [taxRate, setTaxRate] = useState<number>(0.08);
+  const [storeSettings, setStoreSettings] = useState<StoreSettings>({
+    tax_rate: 8.0, // Default fallback
+    free_shipping_threshold: 200,
+    standard_shipping_rate: 25
+  });
 
-  // Get tax rate from admin settings on mount
+  // Get settings from admin on mount
   useEffect(() => {
-    async function fetchAdminTaxRate() {
+    async function fetchStoreSettings() {
       try {
         const { data, error } = await supabase
           .from('store_settings')
-          .select('tax_rate')
+          .select('tax_rate, free_shipping_threshold, standard_shipping_rate')
           .limit(1)
           .maybeSingle();
-        if (!error && data?.tax_rate != null) {
-          setTaxRate(Number(data.tax_rate) / 100);
+        
+        if (!error && data) {
+          setStoreSettings({
+            tax_rate: Number(data.tax_rate) || 8.0,
+            free_shipping_threshold: Number(data.free_shipping_threshold) || 200,
+            standard_shipping_rate: Number(data.standard_shipping_rate) || 25
+          });
         }
       } catch (e) {
-        // ignore, fallback to default
+        console.error('Error fetching store settings:', e);
+        // Use fallback values
       }
     }
-    fetchAdminTaxRate();
+    fetchStoreSettings();
   }, []);
 
   const handleUpdateQuantity = (id: string, size: string, newQuantity: number) => {
@@ -64,8 +80,8 @@ const Cart = () => {
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const discount = appliedPromo === "LUXURY10" ? subtotal * 0.1 : 0;
-  const shipping = subtotal > 200 ? 0 : 25;
-  const tax = (subtotal - discount) * taxRate;
+  const shipping = subtotal > storeSettings.free_shipping_threshold ? 0 : storeSettings.standard_shipping_rate;
+  const tax = (subtotal - discount) * (storeSettings.tax_rate / 100);
   const total = subtotal - discount + shipping + tax;
 
   if (cartItems.length === 0) {
@@ -217,7 +233,7 @@ const Cart = () => {
                 </div>
                 
                 <div className="flex justify-between text-gray-600">
-                  <span>Tax {`(${(taxRate * 100).toFixed(2)}%)`}</span>
+                  <span>Tax ({storeSettings.tax_rate.toFixed(2)}%)</span>
                   <span>${tax.toFixed(2)}</span>
                 </div>
                 
@@ -231,7 +247,7 @@ const Cart = () => {
 
               {shipping > 0 && (
                 <p className="text-sm text-gray-500 mt-3">
-                  Add ${(200 - subtotal).toFixed(2)} more for free shipping
+                  Add ${(storeSettings.free_shipping_threshold - subtotal).toFixed(2)} more for free shipping
                 </p>
               )}
 
