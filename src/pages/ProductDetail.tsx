@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,16 +27,8 @@ const ProductDetail = () => {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedSize, setSelectedSize] = useState("");
-  const [selectedColor, setSelectedColor] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [mainImage, setMainImage] = useState(0);
-
-  // Default colors (since we don't have colors in the database yet)
-  const defaultColors = [
-    { name: "Black", value: "#000000" },
-    { name: "Navy", value: "#1e3a8a" },
-    { name: "Burgundy", value: "#7c2d12" }
-  ];
 
   useEffect(() => {
     if (id) {
@@ -79,10 +72,6 @@ const ProductDetail = () => {
       toast.error("Please select a size");
       return;
     }
-    if (!selectedColor) {
-      toast.error("Please select a color");
-      return;
-    }
 
     const cartItem = {
       id: product.id,
@@ -90,7 +79,7 @@ const ProductDetail = () => {
       price: product.price,
       image: product.images[0] || '/placeholder.svg',
       size: selectedSize || "One Size",
-      color: selectedColor,
+      color: "Default",
       quantity: quantity
     };
 
@@ -195,29 +184,6 @@ const ProductDetail = () => {
                 </div>
               </div>
             )}
-
-            {/* Color Selection */}
-            <div>
-              <h3 className="text-lg font-semibold mb-3">Color</h3>
-              <div className="flex space-x-3">
-                {defaultColors.map((color) => (
-                  <button
-                    key={color.name}
-                    onClick={() => setSelectedColor(color.name)}
-                    className={`w-12 h-12 rounded-full border-4 transition-all duration-200 ${
-                      selectedColor === color.name
-                        ? "border-luxury-gold scale-110"
-                        : "border-gray-300 hover:border-gray-400"
-                    }`}
-                    style={{ backgroundColor: color.value }}
-                    title={color.name}
-                  />
-                ))}
-              </div>
-              {selectedColor && (
-                <p className="text-sm text-gray-600 mt-2">Selected: {selectedColor}</p>
-              )}
-            </div>
 
             {/* Quantity */}
             <div>
