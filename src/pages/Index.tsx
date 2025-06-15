@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -112,15 +111,12 @@ const Index = () => {
           <p className="text-xl md:text-2xl mb-8 font-light animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
             Discover premium fashion that speaks to your sophisticated taste
           </p>
-          <div className="space-x-4 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+          <div className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
             <Link to="/products">
               <Button size="lg" className="bg-luxury-gold text-black hover:bg-yellow-400 font-semibold px-8 py-3">
                 Shop Collection
               </Button>
             </Link>
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-black px-8 py-3">
-              Learn More
-            </Button>
           </div>
         </div>
       </section>
