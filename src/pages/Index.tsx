@@ -236,13 +236,6 @@ const Index = () => {
                 Discover Our Heritage
               </Button>
             </div>
-            <div className="relative">
-              <img
-                src="https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=600&h=800&fit=crop"
-                alt="Luxury fashion atelier"
-                className="w-full h-96 lg:h-[500px] object-cover rounded-lg shadow-2xl"
-              />
-            </div>
           </div>
         </div>
       </section>
