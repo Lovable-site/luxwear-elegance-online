@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import ProductCard from "@/components/ProductCard";
 import { toast } from "sonner";
+import logo from "@/assets/luxuriq.jpeg"
 
 interface Product {
   id: string;
@@ -236,6 +237,7 @@ const Index = () => {
                 Discover Our Heritage
               </Button>
             </div>
+             <img src={logo} alt="Luxuriq Logo" className="w-12 h-12 md:w-16 md:h-16 object-contain" />
           </div>
         </div>
       </section>
