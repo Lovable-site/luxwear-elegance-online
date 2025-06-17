@@ -77,19 +77,6 @@ const Footer = () => {
               </li>
             </ul>
           </div>
-
-          {/* Newsletter / Stay Connected */}
-          <div className="space-y-4">
-            <h4 className="text-xl font-heading font-semibold text-white">Stay Connected</h4>
-            <p className="text-gray-400 text-sm">
-              Subscribe to receive updates on new collections and exclusive offers.
-            </p>
-            <input
-              type="email"
-              placeholder="Enter your email"
-              className="w-full px-4 py-2 bg-gray-800 text-white border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-luxury-gold"
-            />
-          </div>
         </div>
 
         <div className="mt-12 border-t border-gray-800 pt-6 text-center">
