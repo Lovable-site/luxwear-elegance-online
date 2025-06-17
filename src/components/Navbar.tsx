@@ -19,9 +19,11 @@ const Navbar = () => {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link to="/" className="flex items-center">
-              <h1 className="text-2xl font-heading font-bold text-gradient">
-                LuxuriqWear
-              </h1>
+              <img 
+                src="@/assets/luxuriq-logo.jpeg" 
+                alt="LuxuriqWear Logo" 
+                className="h-10 object-contain" 
+              />
             </Link>
 
             {/* Desktop Navigation */}
