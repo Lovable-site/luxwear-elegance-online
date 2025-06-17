@@ -237,7 +237,13 @@ const Index = () => {
                 Discover Our Heritage
               </Button>
             </div>
-             <img src={logo} alt="Luxuriq Logo" className="w-12 h-12 md:w-16 md:h-16 object-contain" />
+            <div className="relative">
+              <img
+                src={logo}
+                alt="Luxury"
+                className="w-full h-96 lg:h-[500px] object-cover rounded-lg shadow-2xl"
+              />
+            </div>
           </div>
         </div>
       </section>
