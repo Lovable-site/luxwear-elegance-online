@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import ProductCard from "@/components/ProductCard";
 import { toast } from "sonner";
-import logo from "@/assets/luxuriq.jpeg"
+import logo from "@/assets/luxury.jpeg"
 
 interface Product {
   id: string;
