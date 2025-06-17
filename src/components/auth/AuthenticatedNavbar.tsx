@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { LogOut, Shield, ShoppingBag, Menu, X } from "lucide-react";
+import { logo } from "@/assets/luxuriq-logo.jpeg"
 
 const AuthenticatedNavbar = () => {
   const { user, userRole, signOut, refreshUserRole } = useAuth();
@@ -34,9 +35,7 @@ const AuthenticatedNavbar = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center">
-            <h1 className="text-2xl font-heading font-bold text-gradient">
-              LuxuriqWear
-            </h1>
+            <img src={logo} alt="LuxuriqWear Logo" className="h-10 object-contain" />
           </Link>
 
           {/* Desktop Navigation */}
