@@ -241,16 +241,16 @@ export class DataService {
     console.log('[DataService] Starting order deletion process for:', orderId);
     
     try {
-      // First, let's check if the order exists
+      // First, let's check if the order exists and get its details
       const { data: orderExists, error: checkError } = await supabase
         .from('orders')
-        .select('id')
+        .select('id, user_id')
         .eq('id', orderId)
-        .single();
+        .maybeSingle();
 
       if (checkError) {
         console.error('[DataService] Error checking order existence:', checkError);
-        throw new Error(`Order not found: ${checkError.message}`);
+        throw new Error(`Failed to check order existence: ${checkError.message}`);
       }
 
       if (!orderExists) {
@@ -258,13 +258,13 @@ export class DataService {
         throw new Error('Order not found');
       }
 
-      console.log('[DataService] Order exists, proceeding with deletion');
+      console.log('[DataService] Order exists, proceeding with deletion for user:', orderExists.user_id);
 
-      // Delete order items first (due to foreign key constraints)
+      // Step 1: Delete order items first (due to foreign key constraints)
       console.log('[DataService] Deleting order items for order:', orderId);
-      const { error: itemsError } = await supabase
+      const { error: itemsError, count: deletedItemsCount } = await supabase
         .from('order_items')
-        .delete()
+        .delete({ count: 'exact' })
         .eq('order_id', orderId);
 
       if (itemsError) {
@@ -272,13 +272,16 @@ export class DataService {
         throw new Error(`Failed to delete order items: ${itemsError.message}`);
       }
 
-      console.log('[DataService] Order items deleted successfully');
+      console.log(`[DataService] Successfully deleted ${deletedItemsCount || 0} order items`);
 
-      // Then delete the order itself
+      // Step 2: Small delay to ensure database consistency
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Step 3: Delete the order itself
       console.log('[DataService] Deleting order:', orderId);
-      const { error: orderError } = await supabase
+      const { error: orderError, count: deletedOrderCount } = await supabase
         .from('orders')
-        .delete()
+        .delete({ count: 'exact' })
         .eq('id', orderId);
 
       if (orderError) {
@@ -286,28 +289,94 @@ export class DataService {
         throw new Error(`Failed to delete order: ${orderError.message}`);
       }
 
-      console.log('[DataService] Order deleted successfully:', orderId);
-
-      // Verify the order is actually deleted
-      const { data: verifyDeleted, error: verifyError } = await supabase
-        .from('orders')
-        .select('id')
-        .eq('id', orderId)
-        .maybeSingle();
-
-      if (verifyError) {
-        console.error('[DataService] Error verifying deletion:', verifyError);
-      } else if (verifyDeleted) {
-        console.error('[DataService] Warning: Order still exists after deletion:', orderId);
-        throw new Error('Order deletion verification failed - order still exists');
-      } else {
-        console.log('[DataService] Deletion verified - order no longer exists');
+      if (deletedOrderCount === 0) {
+        console.error('[DataService] No order was deleted - this indicates a permission or constraint issue');
+        throw new Error('Order deletion failed - no rows affected. Check permissions and constraints.');
       }
 
-      return { success: true };
+      console.log(`[DataService] Successfully deleted ${deletedOrderCount} order(s)`);
+
+      // Step 4: Wait a bit longer for database propagation
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      // Step 5: Verify deletion with multiple attempts to handle eventual consistency
+      let verificationAttempts = 0;
+      const maxAttempts = 3;
+      let orderStillExists = true;
+
+      while (verificationAttempts < maxAttempts && orderStillExists) {
+        verificationAttempts++;
+        console.log(`[DataService] Verification attempt ${verificationAttempts}/${maxAttempts}`);
+
+        // Use a fresh query to bypass any caching
+        const { data: verifyDeleted, error: verifyError } = await supabase
+          .from('orders')
+          .select('id, status, user_id')
+          .eq('id', orderId)
+          .maybeSingle();
+
+        if (verifyError) {
+          console.error(`[DataService] Error in verification attempt ${verificationAttempts}:`, verifyError);
+          // If it's a "not found" error, that's actually good - the order is deleted
+          if (verifyError.code === 'PGRST116' || verifyError.message?.includes('No rows found')) {
+            console.log('[DataService] Order successfully deleted (confirmed by not found error)');
+            orderStillExists = false;
+            break;
+          }
+          // For other errors, we'll retry
+          if (verificationAttempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 300));
+            continue;
+          }
+          throw new Error(`Verification failed: ${verifyError.message}`);
+        }
+
+        if (!verifyDeleted) {
+          console.log(`[DataService] Verification attempt ${verificationAttempts}: Order successfully deleted`);
+          orderStillExists = false;
+        } else {
+          console.warn(`[DataService] Verification attempt ${verificationAttempts}: Order still exists:`, {
+            id: verifyDeleted.id,
+            status: verifyDeleted.status,
+            user_id: verifyDeleted.user_id
+          });
+          
+          if (verificationAttempts < maxAttempts) {
+            // Wait before retrying
+            await new Promise(resolve => setTimeout(resolve, 300));
+          }
+        }
+      }
+
+      if (orderStillExists) {
+        console.error('[DataService] Order deletion verification failed after all attempts');
+        
+        // Final diagnostic query to understand why it still exists
+        const { data: diagnosticData, error: diagnosticError } = await supabase
+          .from('orders')
+          .select('id, status, user_id, created_at, updated_at')
+          .eq('id', orderId)
+          .maybeSingle();
+
+        if (!diagnosticError && diagnosticData) {
+          console.error('[DataService] Diagnostic data for failed deletion:', diagnosticData);
+          throw new Error(`Order deletion verification failed. Order still exists with status: ${diagnosticData.status}. This may be due to RLS policies or database constraints.`);
+        }
+        
+        throw new Error('Order deletion verification failed - order may still exist due to database consistency issues');
+      }
+
+      console.log('[DataService] Order deletion completed and verified successfully');
+      return { success: true, deletedItemsCount: deletedItemsCount || 0 };
+
     } catch (error) {
       console.error('[DataService] Error in deleteOrder:', error);
-      throw error;
+      
+      // Enhanced error reporting
+      if (error instanceof Error) {
+        throw new Error(`Order deletion failed: ${error.message}`);
+      }
+      throw new Error('Order deletion failed due to unknown error');
     }
   }
 
